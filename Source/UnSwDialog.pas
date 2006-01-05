@@ -30,24 +30,25 @@ type
   TfrmUnSwDialog = class(TForm)
     btnCancel:                                  TButton;
     btnOK:                                      TButton;
+    chkDataModules:                             TCheckBox;
+    chkForms:                                   TCheckBox;
+    chkProjectSource:                           TCheckBox;
     edtSearch:                                  TEdit;
     ilsTypes:                                   TImageList;
     lstUnits:                                   TListBox;
     pnlButtons:                                 TPanel;
+    pnlIncludeTypes:                            TPanel;
     pnlMain:                                    TPanel;
     pnlSearch:                                  TPanel;
     sbStatus:                                   TStatusBar;
-    chkForms: TCheckBox;
-    chkDataModules: TCheckBox;
-    chkProjectSource: TCheckBox;
-    pnlIncludeTypes: TPanel;
-    procedure TypeFilterChange(Sender: TObject);
 
     procedure edtSearchChange(Sender: TObject);
     procedure edtSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure TypeFilterChange(Sender: TObject);
     procedure lstUnitsData(Control: TWinControl; Index: Integer; var Data: string);
     procedure lstUnitsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
   private
+    FLoading:               Boolean;
     FUnitList:              TUnSwUnitList;
     FActiveUnit:            TUnSwUnit;
     FFormsOnly:             Boolean;
@@ -73,6 +74,7 @@ type
 
 implementation
 uses
+  DIalogs,
   SysUtils,
   Graphics;
 
@@ -122,19 +124,24 @@ function TfrmUnSwDialog.InternalExecute(): TUnSwUnit;
 begin
   Result              := nil;
 
-  if not FFormsOnly then
-  begin
-    chkForms.Checked          := FTypeFilter.IncludeForms;
-    chkDataModules.Checked    := FTypeFilter.IncludeDataModules;
-    chkProjectSource.Checked  := FTypeFilter.IncludeProjectSource;
-  end else
-    pnlIncludeTypes.Visible := False;
-
   FTypeFilteredList   := TUnSwUnitList.Create();
   FInputFilteredList  := TUnSwUnitList.Create();
   FTypeFilter         := TUnSwUnitTypeFilter.Create(FTypeFilteredList);
   FInputFilter        := TUnSwUnitSimpleFilter.Create(FInputFilteredList);
   try
+    if not FFormsOnly then
+    begin
+      FLoading  := True;
+      try
+        chkForms.Checked          := FTypeFilter.IncludeForms;
+        chkDataModules.Checked    := FTypeFilter.IncludeDataModules;
+        chkProjectSource.Checked  := FTypeFilter.IncludeProjectSource;
+      finally
+        FLoading  := False;
+      end;
+    end else
+      pnlIncludeTypes.Visible   := False;
+
     UpdateTypeFilter();
 
     FIconVisitor  := TUnSwIconVisitor.Create();
@@ -227,7 +234,8 @@ end;
 
 procedure TfrmUnSwDialog.TypeFilterChange(Sender: TObject);
 begin
-  UpdateTypeFilter();
+  if not FLoading then
+    UpdateTypeFilter();
 end;
 
 procedure TfrmUnSwDialog.lstUnitsData(Control: TWinControl; Index: Integer;
