@@ -202,8 +202,13 @@ end;
 function TUnSwModuleUnit.GetUnitType(): TUnSwUnitType;
 begin
   Result  := TUnSwUnitType(FModule.ModuleType);
-  if (Result = swutForm) and (Length(FModule.FormName) = 0) then
-    Result  := swutUnit;
+
+  if Result = swutForm then
+    if Length(FModule.FormName) = 0 then
+      if Length(FModule.FileName) = 0 then
+        Result  := swutProjUnit
+      else
+        Result  := swutUnit;
 end;
 
 

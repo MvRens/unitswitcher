@@ -86,8 +86,9 @@ uses
 procedure TUnSwIconVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
 begin
   case AUnit.UnitType of
-    swutForm:         FImageIndex := 1;
-    swutDataModule:   FImageIndex := 2;
+    swutUnit:         FImageIndex := 1;
+    swutForm:         FImageIndex := 2;
+    swutDataModule:   FImageIndex := 3;
   else
                       FImageIndex := 0;
   end;
@@ -95,7 +96,7 @@ end;
 
 procedure TUnSwIconVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
-  FImageIndex := 3;
+  FImageIndex := 4;
 end;
 
 
