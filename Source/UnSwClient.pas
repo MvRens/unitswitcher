@@ -16,9 +16,12 @@ uses
 type
   TUnitSwitcherHook = class(TObject)
   private
-    FOldExecute:          TNotifyEvent;
+    FOldUnitExecute:      TNotifyEvent;
+    FOldFormExecute:      TNotifyEvent;
     FViewUnitAction:      TContainedAction;
+    FViewFormAction:      TContainedAction;
   protected
+    function ActiveFileName(): String;
     procedure NewExecute(Sender: TObject); virtual;
   public
     constructor Create();
@@ -48,14 +51,20 @@ begin
       pAction := ifNTA.ActionList.Actions[iAction];
       if pAction.Name = 'ViewUnitCommand' then
       begin
-        FOldExecute       := pAction.OnExecute;
+        FOldUnitExecute   := pAction.OnExecute;
         pAction.OnExecute := NewExecute;
         FViewUnitAction   := pAction;
-        break;
+      end else if pAction.Name = 'ViewFormCommand' then
+      begin
+        FOldFormExecute   := pAction.OnExecute;
+        pAction.OnExecute := NewExecute;
+        FViewFormAction   := pAction;
       end;
     end;
 
     Assert(Assigned(FViewUnitAction), 'ViewUnitCommand action is not' +
+                                      'available in the IDE.');
+    Assert(Assigned(FViewFormAction), 'ViewFormCommand action is not' +
                                       'available in the IDE.');
   except
     on E:EAssertionFailed do
@@ -65,30 +74,59 @@ end;
 
 destructor TUnitSwitcherHook.Destroy();
 begin
+  if Assigned(FViewFormAction) then
+    FViewFormAction.OnExecute := FOldFormExecute;
+
   if Assigned(FViewUnitAction) then
-    FViewUnitAction.OnExecute := FOldExecute;
+    FViewUnitAction.OnExecute := FOldUnitExecute;
 
   inherited;
 end;
 
 
+function TUnitSwitcherHook.ActiveFileName(): String;
+var
+  ifModule:     IOTAModule;
+
+begin
+  Result    := '';
+  ifModule  := (BorlandIDEServices as IOTAModuleServices).CurrentModule;
+  if Assigned(ifModule) then
+  begin
+    if Assigned(ifModule.CurrentEditor) then
+      Result  := ifModule.FileName;
+  end;
+end;
+
 procedure TUnitSwitcherHook.NewExecute(Sender: TObject);
 var
+  iActive:    Integer;
+  ifProject:  IOTAProject;
   iModule:    Integer;
-  pProject:   IOTAProject;
+  pActive:    TUnSwUnit;
   pUnits:     TUnSwUnitList;
 
 begin
-  pProject  := (BorlandIDEServices as IOTAModuleServices).GetActiveProject;
-  if not Assigned(pProject) then
+  ifProject := (BorlandIDEServices as IOTAModuleServices).GetActiveProject;
+  if not Assigned(ifProject) then
     exit;
 
   pUnits    := TUnSwUnitList.Create();
   try
-    for iModule := 0 to Pred(pProject.GetModuleCount) do
-      pUnits.Add(TUnSwUnit.Create(pProject.GetModule(iModule)));
+    pUnits.Add(TUnSwProjectUnit.Create(ifProject));
 
-    TfrmUnSwDialog.Execute(pUnits);
+    for iModule := 0 to Pred(ifProject.GetModuleCount) do
+      pUnits.Add(TUnSwModuleUnit.Create(ifProject.GetModule(iModule)));
+
+    pActive := nil;
+    iActive := pUnits.IndexOfFileName(ActiveFileName());
+    if iActive > -1 then
+      pActive := pUnits[iActive];
+
+    pActive := TfrmUnSwDialog.Execute(pUnits, (Sender = FViewFormAction),
+                                      pActive);
+    if Assigned(pActive) then
+      pActive.Activate((Sender = FViewUnitAction));
   finally
     FreeAndNil(pUnits);
   end;

@@ -3,7 +3,7 @@ object frmUnSwDialog: TfrmUnSwDialog
   Top = 83
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher - it almosts makes coffee.'
-  ClientHeight = 387
+  ClientHeight = 427
   ClientWidth = 299
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -17,7 +17,7 @@ object frmUnSwDialog: TfrmUnSwDialog
   TextHeight = 13
   object sbStatus: TStatusBar
     Left = 0
-    Top = 368
+    Top = 408
     Width = 299
     Height = 19
     Panels = <
@@ -29,11 +29,11 @@ object frmUnSwDialog: TfrmUnSwDialog
     Left = 0
     Top = 0
     Width = 299
-    Height = 334
+    Height = 317
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 4
-    TabOrder = 1
+    TabOrder = 0
     ExplicitWidth = 297
     ExplicitHeight = 368
     object pnlSearch: TPanel
@@ -59,7 +59,7 @@ object frmUnSwDialog: TfrmUnSwDialog
       Left = 4
       Top = 29
       Width = 291
-      Height = 301
+      Height = 284
       Style = lbVirtualOwnerDraw
       Align = alClient
       ItemHeight = 20
@@ -68,38 +68,74 @@ object frmUnSwDialog: TfrmUnSwDialog
       OnDrawItem = lstUnitsDrawItem
     end
   end
-  object Panel1: TPanel
+  object pnlButtons: TPanel
     Left = 0
-    Top = 334
+    Top = 372
     Width = 299
-    Height = 34
+    Height = 36
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
     DesignSize = (
       299
-      34)
+      36)
     object btnCancel: TButton
       Left = 220
-      Top = 2
+      Top = 5
       Width = 75
       Height = 25
-      Anchors = [akTop, akRight]
+      Anchors = [akRight, akBottom]
       Cancel = True
       Caption = 'Cancel'
       ModalResult = 2
-      TabOrder = 0
+      TabOrder = 1
     end
     object btnOK: TButton
       Left = 139
-      Top = 2
+      Top = 5
       Width = 75
       Height = 25
-      Anchors = [akTop, akRight]
+      Anchors = [akRight, akBottom]
       Caption = 'OK'
       Default = True
       ModalResult = 1
+      TabOrder = 0
+    end
+  end
+  object pnlIncludeTypes: TPanel
+    Left = 0
+    Top = 317
+    Width = 299
+    Height = 55
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 1
+    object chkDataModules: TCheckBox
+      Left = 4
+      Top = 19
+      Width = 291
+      Height = 17
+      Caption = 'Show &DataModule units'
       TabOrder = 1
+      OnClick = TypeFilterChange
+    end
+    object chkForms: TCheckBox
+      Left = 4
+      Top = 2
+      Width = 291
+      Height = 17
+      Caption = 'Show &Form units'
+      TabOrder = 0
+      OnClick = TypeFilterChange
+    end
+    object chkProjectSource: TCheckBox
+      Left = 4
+      Top = 36
+      Width = 291
+      Height = 17
+      Caption = 'Show &Project source'
+      TabOrder = 2
+      OnClick = TypeFilterChange
     end
   end
   object ilsTypes: TImageList

@@ -8,7 +8,46 @@ uses
 
 type
   // Forward declarations
-  TUnSwUnitFilter       = class;
+  TUnSwUnit             = class;
+  TUnSwModuleUnit       = class;
+  TUnSwProjectUnit      = class;
+  
+
+  IUnSwVisitor          = interface
+    ['{A822C25B-5D0F-462F-94DD-47CD6235D79F}']
+    procedure VisitModule(const AUnit: TUnSwModuleUnit);
+    procedure VisitProject(const AUnit: TUnSwProjectUnit);
+  end;
+
+  IUnSwVisited          = interface
+    ['{9540671E-184B-4DB6-A015-27B457C74C6C}']
+    procedure AcceptVisitor(const AVisitor: IUnSwVisitor);
+  end;
+
+  
+  TUnSwNoRefIntfObject  = class(TPersistent, IInterface)
+  protected
+    // IInterface
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef(): Integer; stdcall;
+    function _Release(): Integer; stdcall;
+  end;
+
+
+  TUnSwUnit             = class(TUnSwNoRefIntfObject, IUnSwVisited)
+  protected
+    function GetName(): String; virtual;
+    function GetFileName(): String; virtual;
+  public
+    // IUnSwVisited
+    procedure AcceptVisitor(const AVisitor: IUnSwVisitor); virtual; abstract;
+
+    procedure Activate(const ASource: Boolean); virtual; abstract;
+
+    property Name:          String        read GetName;
+    property FileName:      String        read GetFileName;
+  end;
+
 
   TUnSwUnitType         = (
                           swutForm          = 0,
@@ -29,22 +68,38 @@ type
                           );
   TUnSwUnitTypes        = set of TUnSwUnitType;
 
-  TUnSwUnit             = class(TPersistent)
+
+  TUnSwModuleUnit       = class(TUnSwUnit)
   private
     FModule:        IOTAModuleInfo;
-
-    function GetName(): String;
-    function GetFileName(): String;
+  protected
+    function GetName(): String; override;
+    function GetFileName(): String; override;
     function GetUnitType(): TUnSwUnitType;
   public
-    constructor Create(const AModule: IOTAModuleInfo); virtual;
+    constructor Create(const AModule: IOTAModuleInfo);
+    procedure AcceptVisitor(const AVisitor: IUnSwVisitor); override;
 
-    property Name:          String        read GetName;
-    property FileName:      String        read GetFileName;
+    procedure Activate(const ASource: Boolean); override;
+
     property UnitType:      TUnSwUnitType read GetUnitType;
   end;
 
-  TUnSwUnitList         = class(TPersistent)
+  TUnSwProjectUnit      = class(TUnSwUnit)
+  private
+    FProject:       IOTAProject;
+  protected
+    function GetName(): String; override;
+    function GetFileName(): String; override;
+  public
+    constructor Create(const AProject: IOTAProject);
+    procedure AcceptVisitor(const AVisitor: IUnSwVisitor); override;
+
+    procedure Activate(const ASource: Boolean); override;
+  end;
+
+
+  TUnSwUnitList         = class(TUnSwNoRefIntfObject, IUnSwVisited)
   private
     FItems:       TObjectList;
 
@@ -57,47 +112,18 @@ type
 
     function Add(const AUnit: TUnSwUnit): Integer; virtual;
     function IndexOf(const AUnit: TUnSwUnit): Integer;
-    procedure Sort(Compare: TListSortCompare);
+    function IndexOfFileName(const AFileName: String): Integer;
+    procedure Delete(const AIndex: Integer);
+    function Remove(const AUnit: TUnSwUnit): Integer;
 
+    procedure Sort(Compare: TListSortCompare);
     procedure Clone(const ASource: TUnSwUnitList); virtual;
-    procedure ApplyFilter(const AFilter: TUnSwUnitFilter); virtual;
+
+    procedure AcceptVisitor(const AVisitor: IUnSwVisitor);
 
     property Count:                 Integer   read GetCount;
     property Items[Index: Integer]: TUnSwUnit read GetItem
                                               write SetItem; default;
-  end;
-
-  TUnSwUnitFilter       = class(TObject)
-  protected
-    function IsFiltered(const AUnit: TUnSwUnit): Boolean; virtual; abstract;
-  public
-    constructor Create(); virtual;
-  end;
-
-  TUnSwUnitSimpleFilter = class(TUnSwUnitFilter)
-  private
-    FFilter:      String;
-
-    procedure SetFilter(const Value: String);
-  protected
-    function IsFiltered(const AUnit: TUnSwUnit): Boolean; override;
-  public
-    property Filter:      String  read FFilter  write SetFilter;
-  end;
-
-  TUnSwUnitTypeFilter   = class(TUnSwUnitFilter)
-  private
-    FIncludeDataModules:    Boolean;
-    FIncludeForms:          Boolean;
-    FIncludeProjectSource:  Boolean;
-  protected
-    function IsFiltered(const AUnit: TUnSwUnit): Boolean; override;
-  public
-    constructor Create(); override;
-
-    property IncludeDataModules:    Boolean read FIncludeDataModules    write FIncludeDataModules;
-    property IncludeForms:          Boolean read FIncludeForms          write FIncludeForms;
-    property IncludeProjectSource:  Boolean read FIncludeProjectSource  write FIncludeProjectSource;
   end;
 
 implementation
@@ -105,30 +131,108 @@ uses
   SysUtils;
 
 
+{ TUnSwNoRefIntfObject }
+function TUnSwNoRefIntfObject.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result  := S_OK
+  else
+    Result  := E_NOINTERFACE;
+end;
+
+function TUnSwNoRefIntfObject._AddRef(): Integer;
+begin
+  Result  := -1;
+end;
+
+function TUnSwNoRefIntfObject._Release(): Integer;
+begin
+  Result  := -1;
+end;
+
+
 { TUnSwUnit }
-constructor TUnSwUnit.Create(const AModule: IOTAModuleInfo);
+function TUnSwUnit.GetName(): String;
+begin
+  Result  := '';
+end;
+
+function TUnSwUnit.GetFileName(): String;
+begin
+  Result  := '';
+end;
+
+
+{ TUnSwModuleUnit }
+constructor TUnSwModuleUnit.Create(const AModule: IOTAModuleInfo);
 begin
   inherited Create();
 
   FModule := AModule;
 end;
 
+procedure TUnSwModuleUnit.Activate(const ASource: Boolean);
+var
+  ifModule:     IOTAModule;
 
-function TUnSwUnit.GetName(): String;
+begin
+  ifModule  := FModule.OpenModule();
+  if Assigned(ifModule) then
+    if ASource then
+      ifModule.ShowFilename(ifModule.FileName)
+    else
+      ifModule.Show();
+end;
+
+procedure TUnSwModuleUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
+begin
+  AVisitor.VisitModule(Self);
+end;
+
+function TUnSwModuleUnit.GetName(): String;
 begin
   Result  := FModule.Name;
 end;
 
-function TUnSwUnit.GetFileName(): String;
+function TUnSwModuleUnit.GetFileName(): String;
 begin
   Result  := FModule.FileName;
 end;
 
-function TUnSwUnit.GetUnitType(): TUnSwUnitType;
+function TUnSwModuleUnit.GetUnitType(): TUnSwUnitType;
 begin
   Result  := TUnSwUnitType(FModule.ModuleType);
   if (Result = swutForm) and (Length(FModule.FormName) = 0) then
     Result  := swutUnit;
+end;
+
+
+{ TUnSwProjectUnit }
+constructor TUnSwProjectUnit.Create(const AProject: IOTAProject);
+begin
+  inherited Create();
+
+  FProject  := AProject;
+end;
+
+procedure TUnSwProjectUnit.Activate(const ASource: Boolean);
+begin
+  FProject.ShowFilename(FProject.FileName);
+end;
+
+procedure TUnSwProjectUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
+begin
+  AVisitor.VisitProject(Self);
+end;
+
+function TUnSwProjectUnit.GetName(): String;
+begin
+  Result  := ChangeFileExt(ExtractFileName(FProject.FileName), '');
+end;
+
+function TUnSwProjectUnit.GetFileName(): String;
+begin
+
 end;
 
 
@@ -149,6 +253,15 @@ begin
 end;
 
 
+procedure TUnSwUnitList.AcceptVisitor(const AVisitor: IUnSwVisitor);
+var
+  iItem:        Integer;
+
+begin
+  for iItem := Pred(Count) downto 0 do
+    Items[iItem].AcceptVisitor(AVisitor);
+end;
+
 function TUnSwUnitList.Add(const AUnit: TUnSwUnit): Integer;
 begin
   Result  := FItems.Add(AUnit);
@@ -159,20 +272,36 @@ begin
   Result  := FItems.IndexOf(AUnit);
 end;
 
-procedure TUnSwUnitList.Sort(Compare: TListSortCompare);
-begin
-  FItems.Sort(Compare);
-end;
-
-
-procedure TUnSwUnitList.ApplyFilter(const AFilter: TUnSwUnitFilter);
+function TUnSwUnitList.IndexOfFileName(const AFileName: String): Integer;
 var
   iItem:      Integer;
 
 begin
+  Result  := -1;
+  if Length(AFileName) = 0 then
+    exit;
+
   for iItem := Pred(Count) downto 0 do
-    if AFilter.IsFiltered(Items[iItem]) then
-      FItems.Delete(iItem);
+    if SameText(Items[iItem].FileName, AFileName) then
+    begin
+      Result  := iItem;
+      break;
+    end;
+end;
+
+procedure TUnSwUnitList.Delete(const AIndex: Integer);
+begin
+  FItems.Delete(AIndex);
+end;
+
+function TUnSwUnitList.Remove(const AUnit: TUnSwUnit): Integer;
+begin
+  Result  := FItems.Remove(AUnit);
+end;
+
+procedure TUnSwUnitList.Sort(Compare: TListSortCompare);
+begin
+  FItems.Sort(Compare);
 end;
 
 procedure TUnSwUnitList.Clone(const ASource: TUnSwUnitList);
@@ -201,56 +330,6 @@ end;
 procedure TUnSwUnitList.SetItem(Index: Integer; Value: TUnSwUnit);
 begin
   FItems[Index] := Value;
-end;
-
-
-{ TUnSwUnitFilter }
-constructor TUnSwUnitFilter.Create();
-begin
-  inherited Create();
-end;
-
-
-{ TUnSwUnitSimpleFilter }
-function TUnSwUnitSimpleFilter.IsFiltered(const AUnit: TUnSwUnit): Boolean;
-begin
-  Result  := (Length(FFilter) > 0) and
-             (AnsiPos(FFilter, LowerCase(AUnit.Name)) = 0);
-end;
-
-procedure TUnSwUnitSimpleFilter.SetFilter(const Value: String);
-begin
-  FFilter := LowerCase(Value);
-end;
-
-
-{ TUnSwUnitTypeFilter }
-constructor TUnSwUnitTypeFilter.Create();
-begin
-  inherited;
-
-  FIncludeDataModules   := True;
-  FIncludeForms         := True;
-  FIncludeProjectSource := True;
-end;
-
-function TUnSwUnitTypeFilter.IsFiltered(const AUnit: TUnSwUnit): Boolean;
-var
-  eValidTypes:      TUnSwUnitTypes;
-
-begin
-  eValidTypes := [swutUnit];
-
-  if FIncludeDataModules then
-    Include(eValidTypes, swutDataModule);
-
-  if FIncludeForms then
-    Include(eValidTypes, swutForm);
-
-  if FIncludeProjectSource then
-    Include(eValidTypes, swutProjUnit);
-
-  Result  := not (AUnit.UnitType in eValidTypes);
 end;
 
 end.

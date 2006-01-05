@@ -34,6 +34,7 @@ requires
 contains
   UnSwClient in '..\..\Source\UnSwClient.pas',
   UnSwObjects in '..\..\Source\UnSwObjects.pas',
-  UnSwDialog in '..\..\Source\UnSwDialog.pas' {frmUnSwDialog};
+  UnSwDialog in '..\..\Source\UnSwDialog.pas' {frmUnSwDialog},
+  UnSwFilters in '..\..\Source\UnSwFilters.pas';
 
 end.

@@ -1,5 +1,7 @@
 unit UnSwDialog;
 
+// #ToDo1 Store dialog settings
+
 interface
 uses
   Classes,
@@ -11,19 +13,35 @@ uses
   StdCtrls,
   Windows,
 
-  UnSwObjects;
+  UnSwObjects,
+  UnSwFilters;
 
 type
+  TUnSwIconVisitor  = class(TUnSwNoRefIntfObject, IUnSwVisitor)
+  private
+    FImageIndex:        Integer;
+  protected
+    procedure VisitModule(const AUnit: TUnSwModuleUnit);
+    procedure VisitProject(const AUnit: TUnSwProjectUnit);
+  public
+    property ImageIndex:      Integer read FImageIndex;
+  end;
+
   TfrmUnSwDialog = class(TForm)
+    btnCancel:                                  TButton;
+    btnOK:                                      TButton;
     edtSearch:                                  TEdit;
     ilsTypes:                                   TImageList;
     lstUnits:                                   TListBox;
+    pnlButtons:                                 TPanel;
     pnlMain:                                    TPanel;
     pnlSearch:                                  TPanel;
     sbStatus:                                   TStatusBar;
-    Panel1: TPanel;
-    btnCancel: TButton;
-    btnOK: TButton;
+    chkForms: TCheckBox;
+    chkDataModules: TCheckBox;
+    chkProjectSource: TCheckBox;
+    pnlIncludeTypes: TPanel;
+    procedure TypeFilterChange(Sender: TObject);
 
     procedure edtSearchChange(Sender: TObject);
     procedure edtSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -31,18 +49,26 @@ type
     procedure lstUnitsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
   private
     FUnitList:              TUnSwUnitList;
+    FActiveUnit:            TUnSwUnit;
+    FFormsOnly:             Boolean;
+
     FTypeFilteredList:      TUnSwUnitList;
     FInputFilteredList:     TUnSwUnitList;
 
     FTypeFilter:            TUnSwUnitTypeFilter;
     FInputFilter:           TUnSwUnitSimpleFilter;
 
-    function InternalExecute(const AUnits: TUnSwUnitList): Integer;
+    FIconVisitor:           TUnSwIconVisitor;
+
+    function InternalExecute(): TUnSwUnit;
+    procedure UpdateTypeFilter();
     procedure UpdateList();
 
     function GetActiveUnit(): TUnSwUnit;
   public
-    class function Execute(const AUnits: TUnSwUnitList): Integer;
+    class function Execute(const AUnits: TUnSwUnitList;
+                           const AFormsOnly: Boolean;
+                           const AActive: TUnSwUnit = nil): TUnSwUnit;
   end;
 
 implementation
@@ -50,41 +76,74 @@ uses
   SysUtils,
   Graphics;
 
+
 {$R *.dfm}
 
+
+{ TUnSwIconVisitor }
+procedure TUnSwIconVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
+begin
+  case AUnit.UnitType of
+    swutForm:         FImageIndex := 1;
+    swutDataModule:   FImageIndex := 2;
+  else
+                      FImageIndex := 0;
+  end;
+end;
+
+procedure TUnSwIconVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
+begin
+  FImageIndex := 3;
+end;
+
+
 { TfrmUnSwDialog }
-class function TfrmUnSwDialog.Execute(const AUnits: TUnSwUnitList): Integer;
+class function TfrmUnSwDialog.Execute(const AUnits: TUnSwUnitList;
+                                      const AFormsOnly: Boolean;
+                                      const AActive: TUnSwUnit): TUnSwUnit;
 begin
   with Self.Create(nil) do
   try
-    Result  := InternalExecute(AUnits);
+    FUnitList   := AUnits;
+    FActiveUnit := AActive;
+    FFormsOnly  := AFormsOnly;
+    Result      := InternalExecute();
   finally
     Free();
   end;
 end;
-
 
 function SortByName(Item1, Item2: Pointer): Integer;
 begin
   Result  := CompareText(TUnSwUnit(Item1).Name, TUnSwUnit(Item2).Name)
 end;
 
-function TfrmUnSwDialog.InternalExecute(const AUnits: TUnSwUnitList): Integer;
+function TfrmUnSwDialog.InternalExecute(): TUnSwUnit;
 begin
-  Result    := -1;
-  FUnitList := AUnits;
+  Result              := nil;
+
+  if not FFormsOnly then
+  begin
+    chkForms.Checked          := FTypeFilter.IncludeForms;
+    chkDataModules.Checked    := FTypeFilter.IncludeDataModules;
+    chkProjectSource.Checked  := FTypeFilter.IncludeProjectSource;
+  end else
+    pnlIncludeTypes.Visible := False;
 
   FTypeFilteredList   := TUnSwUnitList.Create();
   FInputFilteredList  := TUnSwUnitList.Create();
-  FTypeFilter         := TUnSwUnitTypeFilter.Create();
-  FInputFilter        := TUnSwUnitSimpleFilter.Create();
+  FTypeFilter         := TUnSwUnitTypeFilter.Create(FTypeFilteredList);
+  FInputFilter        := TUnSwUnitSimpleFilter.Create(FInputFilteredList);
   try
-    FTypeFilteredList.Clone(FUnitList);
-    FTypeFilteredList.ApplyFilter(FTypeFilter);
-    FTypeFilteredList.Sort(SortByName);
-    UpdateList();
+    UpdateTypeFilter();
 
-    Self.ShowModal();
+    FIconVisitor  := TUnSwIconVisitor.Create();
+    try
+      if Self.ShowModal() = mrOk then
+        Result  := GetActiveUnit();
+    finally
+      FreeAndNil(FIconVisitor);
+    end;
   finally
     FreeAndNil(FInputFilter);
     FreeAndNil(FTypeFilter);
@@ -99,10 +158,9 @@ var
 
 begin
   pActive := GetActiveUnit();
-  // #ToDo1 Try to select the previous unit, otherwise select the first
 
   FInputFilteredList.Clone(FTypeFilteredList);
-  FInputFilteredList.ApplyFilter(FInputFilter);
+  FInputFilteredList.AcceptVisitor(FInputFilter);
 
   lstUnits.Count  := FInputFilteredList.Count;
   if FInputFilteredList.Count > 0 then
@@ -115,11 +173,28 @@ begin
   end;
 end;
 
+procedure TfrmUnSwDialog.UpdateTypeFilter();
+begin
+  FTypeFilter.IncludeUnits          := not FFormsOnly;
+  FTypeFilter.IncludeForms          := (FFormsOnly or chkForms.Checked);
+  FTypeFilter.IncludeDataModules    := ((not FFormsOnly) and chkDataModules.Checked);
+  FTypeFilter.IncludeProjectSource  := ((not FFormsOnly) and chkProjectSource.Checked);
+
+  FTypeFilteredList.Clone(FUnitList);
+  FTypeFilteredList.AcceptVisitor(FTypeFilter);
+  FTypeFilteredList.Sort(SortByName);
+  UpdateList();
+end;
+
 function TfrmUnSwDialog.GetActiveUnit(): TUnSwUnit;
 begin
-  Result  := nil;
-  if lstUnits.ItemIndex > -1 then
-    Result  := FInputFilteredList[lstUnits.ItemIndex];
+  Result  := FActiveUnit;
+  if not Assigned(Result) then
+  begin
+    if lstUnits.ItemIndex > -1 then
+      Result  := FInputFilteredList[lstUnits.ItemIndex];
+  end else
+    FActiveUnit := nil;
 end;
 
 procedure TfrmUnSwDialog.edtSearchChange(Sender: TObject);
@@ -134,14 +209,26 @@ begin
   if Shift = [] then
     case Key of
       VK_UP:
-        if lstUnits.ItemIndex > 0 then
-          lstUnits.ItemIndex  := Pred(lstUnits.ItemIndex);
+        begin
+          if lstUnits.ItemIndex > 0 then
+            lstUnits.ItemIndex  := Pred(lstUnits.ItemIndex);
+
+          Key := 0;
+        end;
       VK_DOWN:
-        if lstUnits.ItemIndex < Pred(lstUnits.Items.Count) then
-          lstUnits.ItemIndex  := Succ(lstUnits.ItemIndex);
+        begin
+          if lstUnits.ItemIndex < Pred(lstUnits.Items.Count) then
+            lstUnits.ItemIndex  := Succ(lstUnits.ItemIndex);
+
+          Key := 0;
+        end;
     end;
 end;
 
+procedure TfrmUnSwDialog.TypeFilterChange(Sender: TObject);
+begin
+  UpdateTypeFilter();
+end;
 
 procedure TfrmUnSwDialog.lstUnitsData(Control: TWinControl; Index: Integer;
                                       var Data: string);
@@ -152,13 +239,15 @@ end;
 procedure TfrmUnSwDialog.lstUnitsDrawItem(Control: TWinControl; Index: Integer;
                                           Rect: TRect; State: TOwnerDrawState);
 var
-  iIcon:      Integer;
+  pUnit:      TUnSwUnit;
   rText:      TRect;
   sText:      String;
 
 begin
   with TListBox(Control) do
   begin
+    pUnit := FInputFilteredList[Index];
+
     if odSelected in State then
     begin
       Canvas.Brush.Color  := clHighlight;
@@ -173,16 +262,11 @@ begin
     rText := Rect;
     InflateRect(rText, -2, -2);
 
-    iIcon := 0;
-    case FInputFilteredList[Index].UnitType of
-      swutForm:         iIcon := 1;
-      swutDataModule:   iIcon := 2;
-      swutProjUnit:     iIcon := 3;
-    end;
-    ilsTypes.Draw(Canvas, rText.Left, rText.Top, iIcon);
+    pUnit.AcceptVisitor(FIconVisitor);
+    ilsTypes.Draw(Canvas, rText.Left, rText.Top, FIconVisitor.ImageIndex);
 
     Inc(rText.Left, ilsTypes.Width + 4);
-    sText := FInputFilteredList[Index].Name;
+    sText := pUnit.Name;
     DrawText(Canvas.Handle, PChar(sText), Length(sText), rText, DT_SINGLELINE or
              DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
   end;
