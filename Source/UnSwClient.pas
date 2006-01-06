@@ -1,6 +1,13 @@
 {$ASSERTIONS ON}
 unit UnSwClient;
 
+// Since Delphi 7 is the lowest supported version at this point, assume
+// all other versions support the IOTAModuleServices.GetActiveProject method...
+{$UNDEF PROJWORKAROUND}
+{$IFDEF VER150}
+  {$DEFINE PROJWORKAROUND}
+{$ENDIF}
+
 interface
 implementation
 uses
@@ -22,6 +29,9 @@ type
     FViewFormAction:      TContainedAction;
   protected
     function ActiveFileName(): String;
+    function ActiveGroup(): IOTAProjectGroup;
+    function ActiveProject(): IOTAProject;
+
     procedure NewExecute(Sender: TObject); virtual;
   public
     constructor Create();
@@ -45,6 +55,9 @@ begin
     Assert(Supports(BorlandIDEServices, IOTAModuleServices),
                     'BorlandIDEServices does not support the ' +
                     'IOTAModuleServices interface.');
+    Assert(Supports(BorlandIDEServices, IOTAActionServices),
+                    'BorlandIDEServices does not support the ' +
+                    'IOTAActionServices interface.');
 
     for iAction := 0 to Pred(ifNTA.ActionList.ActionCount) do
     begin
@@ -98,6 +111,53 @@ begin
   end;
 end;
 
+function TUnitSwitcherHook.ActiveGroup(): IOTAProjectGroup;
+var
+  ifModule:     IOTAModule;
+  ifModules:    IOTAModuleServices;
+  iModule:      Integer;
+
+begin
+  Result    := nil;
+  ifModules := (BorlandIDEServices as IOTAModuleServices);
+  for iModule := 0 to Pred(ifModules.ModuleCount) do
+  begin
+    ifModule  := ifModules.Modules[iModule];
+    if Supports(ifModule, IOTAProjectGroup, Result) then
+      break;
+  end;
+end;
+
+function TUnitSwitcherHook.ActiveProject(): IOTAProject;
+{$IFDEF PROJWORKAROUND}
+var
+  ifGroup:      IOTAProjectGroup;
+  ifModule:     IOTAModule;
+  ifModules:    IOTAModuleServices;
+  iModule:      Integer;
+{$ENDIF}
+
+begin
+  {$IFDEF PROJWORKAROUND}
+  Result  := nil;
+  ifGroup := ActiveGroup();
+  if not Assigned(ifGroup) then
+  begin
+    ifModules := (BorlandIDEServices as IOTAModuleServices);
+    for iModule := 0 to Pred(ifModules.ModuleCount) do
+    begin
+      ifModule  := ifModules.Modules[iModule];
+      if Supports(ifModule, IOTAProject, Result) then
+        break;
+    end;
+  end else
+    Result  := ifGroup.ActiveProject;
+  {$ELSE}
+  Result  := (BorlandIDEServices as IOTAModuleServices).GetActiveProject
+  {$ENDIF}
+end;
+
+
 procedure TUnitSwitcherHook.NewExecute(Sender: TObject);
 var
   iActive:    Integer;
@@ -107,7 +167,7 @@ var
   pUnits:     TUnSwUnitList;
 
 begin
-  ifProject := (BorlandIDEServices as IOTAModuleServices).GetActiveProject;
+  ifProject := ActiveProject();
   if not Assigned(ifProject) then
     exit;
 

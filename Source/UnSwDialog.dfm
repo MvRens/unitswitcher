@@ -1,10 +1,10 @@
 object frmUnSwDialog: TfrmUnSwDialog
   Left = 187
   Top = 83
+  Width = 307
+  Height = 454
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher - it almosts makes coffee.'
-  ClientHeight = 427
-  ClientWidth = 299
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -34,8 +34,6 @@ object frmUnSwDialog: TfrmUnSwDialog
     BevelOuter = bvNone
     BorderWidth = 4
     TabOrder = 0
-    ExplicitWidth = 297
-    ExplicitHeight = 368
     object pnlSearch: TPanel
       Left = 4
       Top = 4
@@ -49,7 +47,6 @@ object frmUnSwDialog: TfrmUnSwDialog
         Top = 0
         Width = 291
         Height = 21
-        Align = alTop
         TabOrder = 0
         OnChange = edtSearchChange
         OnKeyDown = edtSearchKeyDown
@@ -142,7 +139,7 @@ object frmUnSwDialog: TfrmUnSwDialog
     Left = 8
     Top = 32
     Bitmap = {
-      494C010105000900040010001000FFFFFFFFFF00FFFFFFFFFFFFFFFF424D3600
+      494C010105000900040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -542,6 +539,7 @@ object frmUnSwDialog: TfrmUnSwDialog
       E000E0000000AC0FE000E0000000BF3FE000E0000000FFFFE000600000001000
       E000200000001000E00000000000B000E00020000000F000E00060000000F000
       E000E0000000F000E000E0000000F000E000E0000000F000E001E0010000F000
-      E003E003FFFFF000E007E007FFFFF000}
+      E003E003FFFFF000E007E007FFFFF00000000000000000000000000000000000
+      000000000000}
   end
 end

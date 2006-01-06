@@ -24,7 +24,7 @@ type
     procedure AcceptVisitor(const AVisitor: IUnSwVisitor);
   end;
 
-  
+
   TUnSwNoRefIntfObject  = class(TPersistent, IInterface)
   protected
     // IInterface
@@ -38,6 +38,8 @@ type
   protected
     function GetName(): String; virtual;
     function GetFileName(): String; virtual;
+
+    procedure OpenFile(const AFileName: String; const ASource: Boolean); virtual;
   public
     // IUnSwVisited
     procedure AcceptVisitor(const AVisitor: IUnSwVisitor); virtual; abstract;
@@ -165,6 +167,13 @@ begin
 end;
 
 
+procedure TUnSwUnit.OpenFile(const AFileName: String; const ASource: Boolean);
+begin
+  (BorlandIDEServices as IOTAActionServices).OpenFile(AFileName);
+  // #ToDo1 (MvR) 6-1-2006: show source for forms
+end;
+
+
 { TUnSwModuleUnit }
 constructor TUnSwModuleUnit.Create(const AModule: IOTAModuleInfo);
 begin
@@ -180,10 +189,7 @@ var
 begin
   ifModule  := FModule.OpenModule();
   if Assigned(ifModule) then
-    if ASource then
-      ifModule.ShowFilename(ifModule.FileName)
-    else
-      ifModule.Show();
+    OpenFile(ifModule.FileName, ASource);
 end;
 
 procedure TUnSwModuleUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
@@ -229,7 +235,7 @@ end;
 
 procedure TUnSwProjectUnit.Activate(const ASource: Boolean);
 begin
-  FProject.ShowFilename(FProject.FileName);
+  OpenFile(FProject.FileName, ASource);
 end;
 
 procedure TUnSwProjectUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
