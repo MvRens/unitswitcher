@@ -1,9 +1,12 @@
 unit UnSwObjects;
 
+{$I UnSwDefines.inc}
+
 interface
 uses
   Classes,
   Contnrs,
+  Registry,
   ToolsAPI;
 
 type
@@ -39,7 +42,7 @@ type
     function GetName(): String; virtual;
     function GetFileName(): String; virtual;
 
-    procedure OpenFile(const AFileName: String; const ASource: Boolean); virtual;
+    procedure OpenModule(const AModule: IOTAModule; const ASource: Boolean); virtual;
   public
     // IUnSwVisited
     procedure AcceptVisitor(const AVisitor: IUnSwVisitor); virtual; abstract;
@@ -130,6 +133,11 @@ type
                                               write SetItem; default;
   end;
 
+  TUnSwRegistry     = class(TRegistry)
+  public
+    function OpenIDEKey(): Boolean;
+  end;
+
 implementation
 uses
   SysUtils;
@@ -167,10 +175,36 @@ begin
 end;
 
 
-procedure TUnSwUnit.OpenFile(const AFileName: String; const ASource: Boolean);
+procedure TUnSwUnit.OpenModule(const AModule: IOTAModule; const ASource: Boolean);
+{$IFDEF DELPHI7}
+var
+  ifEditor:       IOTAEditor;
+  iModule:        Integer;
+{$ENDIF}
+
 begin
-  (BorlandIDEServices as IOTAActionServices).OpenFile(AFileName);
-  // #ToDo1 (MvR) 6-1-2006: show source for forms
+  {$IFDEF DELPHI7}
+  for iModule := 0 to Pred(AModule.ModuleFileCount) do
+    if Supports(AModule.ModuleFileEditors[iModule], IOTAFormEditor,
+                ifEditor) then
+    begin
+      if not ASource then
+      begin
+        ifEditor.Show();
+        break;
+      end;
+    end else
+      if ASource then
+      begin
+        ifEditor.Show();
+        break;
+      end;
+  {$ELSE}
+  if ASource then
+    AModule.ShowFilename(AModule.FileName)
+  else
+    AModule.Show();
+  {$ENDIF}
 end;
 
 
@@ -189,7 +223,7 @@ var
 begin
   ifModule  := FModule.OpenModule();
   if Assigned(ifModule) then
-    OpenFile(ifModule.FileName, ASource);
+    OpenModule(ifModule, ASource);
 end;
 
 procedure TUnSwModuleUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
@@ -217,7 +251,9 @@ begin
   Result  := TUnSwUnitType(FModule.ModuleType);
 
   if Result = swutForm then
-    if Length(FModule.FormName) = 0 then
+    if SameText(FModule.DesignClass, 'TDataModule') then
+      Result  := swutDataModule
+    else if Length(FModule.FormName) = 0 then
       if Length(FModule.FileName) = 0 then
         Result  := swutProjUnit
       else
@@ -235,7 +271,7 @@ end;
 
 procedure TUnSwProjectUnit.Activate(const ASource: Boolean);
 begin
-  OpenFile(FProject.FileName, ASource);
+  OpenModule(FProject, False);
 end;
 
 procedure TUnSwProjectUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
@@ -348,6 +384,14 @@ end;
 procedure TUnSwUnitList.SetItem(Index: Integer; Value: TUnSwUnit);
 begin
   FItems[Index] := Value;
+end;
+
+
+{ TUnSwRegistry }
+function TUnSwRegistry.OpenIDEKey(): Boolean;
+begin
+  Result  := OpenKey((BorlandIDEServices as IOTAServices).GetBaseRegistryKey() +
+                     '\UnitSwitcher', True);
 end;
 
 end.

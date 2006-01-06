@@ -1,12 +1,7 @@
 {$ASSERTIONS ON}
 unit UnSwClient;
 
-// Since Delphi 7 is the lowest supported version at this point, assume
-// all other versions support the IOTAModuleServices.GetActiveProject method...
-{$UNDEF PROJWORKAROUND}
-{$IFDEF VER150}
-  {$DEFINE PROJWORKAROUND}
-{$ENDIF}
+{$I UnSwDefines.inc}
 
 interface
 implementation
@@ -29,7 +24,9 @@ type
     FViewFormAction:      TContainedAction;
   protected
     function ActiveFileName(): String;
+    {$IFDEF DELPHI7}
     function ActiveGroup(): IOTAProjectGroup;
+    {$ENDIF}
     function ActiveProject(): IOTAProject;
 
     procedure NewExecute(Sender: TObject); virtual;
@@ -55,9 +52,11 @@ begin
     Assert(Supports(BorlandIDEServices, IOTAModuleServices),
                     'BorlandIDEServices does not support the ' +
                     'IOTAModuleServices interface.');
+    {$IFDEF DELPHI7}
     Assert(Supports(BorlandIDEServices, IOTAActionServices),
                     'BorlandIDEServices does not support the ' +
                     'IOTAActionServices interface.');
+    {$ENDIF}
 
     for iAction := 0 to Pred(ifNTA.ActionList.ActionCount) do
     begin
@@ -111,6 +110,7 @@ begin
   end;
 end;
 
+{$IFDEF DELPHI7}
 function TUnitSwitcherHook.ActiveGroup(): IOTAProjectGroup;
 var
   ifModule:     IOTAModule;
@@ -127,9 +127,10 @@ begin
       break;
   end;
 end;
+{$ENDIF}
 
 function TUnitSwitcherHook.ActiveProject(): IOTAProject;
-{$IFDEF PROJWORKAROUND}
+{$IFDEF DELPHI7}
 var
   ifGroup:      IOTAProjectGroup;
   ifModule:     IOTAModule;
@@ -138,7 +139,7 @@ var
 {$ENDIF}
 
 begin
-  {$IFDEF PROJWORKAROUND}
+  {$IFDEF DELPHI7}
   Result  := nil;
   ifGroup := ActiveGroup();
   if not Assigned(ifGroup) then

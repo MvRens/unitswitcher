@@ -1,11 +1,13 @@
 object frmUnSwDialog: TfrmUnSwDialog
   Left = 187
   Top = 83
-  Width = 307
-  Height = 454
   BorderIcons = [biSystemMenu]
-  Caption = 'UnitSwitcher - it almosts makes coffee.'
+  Caption = 'UnitSwitcher'
+  ClientHeight = 400
+  ClientWidth = 320
   Color = clBtnFace
+  Constraints.MinHeight = 240
+  Constraints.MinWidth = 172
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -17,67 +19,81 @@ object frmUnSwDialog: TfrmUnSwDialog
   TextHeight = 13
   object sbStatus: TStatusBar
     Left = 0
-    Top = 408
-    Width = 299
+    Top = 381
+    Width = 320
     Height = 19
     Panels = <
       item
         Width = 50
       end>
+    ExplicitTop = 408
+    ExplicitWidth = 299
   end
   object pnlMain: TPanel
     Left = 0
     Top = 0
-    Width = 299
-    Height = 317
+    Width = 320
+    Height = 290
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 4
     TabOrder = 0
+    ExplicitWidth = 299
+    ExplicitHeight = 317
     object pnlSearch: TPanel
       Left = 4
       Top = 4
-      Width = 291
+      Width = 312
       Height = 25
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
+      ExplicitWidth = 291
+      DesignSize = (
+        312
+        25)
       object edtSearch: TEdit
         Left = 0
         Top = 0
-        Width = 291
+        Width = 312
         Height = 21
+        Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
         OnChange = edtSearchChange
         OnKeyDown = edtSearchKeyDown
+        ExplicitWidth = 291
       end
     end
     object lstUnits: TListBox
       Left = 4
       Top = 29
-      Width = 291
-      Height = 284
+      Width = 312
+      Height = 257
       Style = lbVirtualOwnerDraw
       Align = alClient
       ItemHeight = 20
       TabOrder = 1
       OnData = lstUnitsData
       OnDrawItem = lstUnitsDrawItem
+      ExplicitWidth = 291
+      ExplicitHeight = 284
     end
   end
   object pnlButtons: TPanel
     Left = 0
-    Top = 372
-    Width = 299
+    Top = 345
+    Width = 320
     Height = 36
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
+    ExplicitTop = 372
+    ExplicitWidth = 299
     DesignSize = (
-      299
+      320
       36)
     object btnCancel: TButton
-      Left = 220
+      Left = 241
       Top = 5
       Width = 75
       Height = 25
@@ -86,9 +102,10 @@ object frmUnSwDialog: TfrmUnSwDialog
       Caption = 'Cancel'
       ModalResult = 2
       TabOrder = 1
+      ExplicitLeft = 220
     end
     object btnOK: TButton
-      Left = 139
+      Left = 160
       Top = 5
       Width = 75
       Height = 25
@@ -97,16 +114,19 @@ object frmUnSwDialog: TfrmUnSwDialog
       Default = True
       ModalResult = 1
       TabOrder = 0
+      ExplicitLeft = 139
     end
   end
   object pnlIncludeTypes: TPanel
     Left = 0
-    Top = 317
-    Width = 299
+    Top = 290
+    Width = 320
     Height = 55
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
+    ExplicitTop = 317
+    ExplicitWidth = 299
     object chkDataModules: TCheckBox
       Left = 4
       Top = 19

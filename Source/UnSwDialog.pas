@@ -1,7 +1,5 @@
 unit UnSwDialog;
 
-// #ToDo1 Store dialog settings
-
 interface
 uses
   Classes,
@@ -66,6 +64,9 @@ type
     procedure UpdateList();
 
     function GetActiveUnit(): TUnSwUnit;
+
+    procedure LoadSettings();
+    procedure SaveSettings();
   public
     class function Execute(const AUnits: TUnSwUnitList;
                            const AFormsOnly: Boolean;
@@ -74,9 +75,9 @@ type
 
 implementation
 uses
-  DIalogs,
-  SysUtils,
-  Graphics;
+  Graphics,
+  Messages,
+  SysUtils;
 
 
 {$R *.dfm}
@@ -124,7 +125,6 @@ end;
 function TfrmUnSwDialog.InternalExecute(): TUnSwUnit;
 begin
   Result              := nil;
-
   FTypeFilteredList   := TUnSwUnitList.Create();
   FInputFilteredList  := TUnSwUnitList.Create();
   FTypeFilter         := TUnSwUnitTypeFilter.Create(FTypeFilteredList);
@@ -134,17 +134,9 @@ begin
   else
     FInputFilter      := TUnSwUnitSimpleNameFilter.Create(FInputFilteredList);
   try
-    if not FFormsOnly then
-    begin
-      FLoading  := True;
-      try
-        chkForms.Checked          := FTypeFilter.IncludeForms;
-        chkDataModules.Checked    := FTypeFilter.IncludeDataModules;
-        chkProjectSource.Checked  := FTypeFilter.IncludeProjectSource;
-      finally
-        FLoading  := False;
-      end;
-    end else
+    LoadSettings();
+
+    if FFormsOnly then
       pnlIncludeTypes.Visible   := False;
 
     UpdateTypeFilter();
@@ -153,6 +145,8 @@ begin
     try
       if Self.ShowModal() = mrOk then
         Result  := GetActiveUnit();
+
+      SaveSettings();
     finally
       FreeAndNil(FIconVisitor);
     end;
@@ -209,6 +203,94 @@ begin
     FActiveUnit := nil;
 end;
 
+
+procedure TfrmUnSwDialog.LoadSettings();
+var
+  pSettings:      TUnSwRegistry;
+
+  function ReadBoolDef(const AName: String; const ADefault: Boolean): Boolean;
+  begin
+    if pSettings.ValueExists(AName) then
+      Result  := pSettings.ReadBool(AName)
+    else
+      Result  := ADefault;
+  end;
+
+  function ReadIntegerDef(const AName: String; const ADefault: Integer): Integer;
+
+  begin
+    if pSettings.ValueExists(AName) then
+      Result  := pSettings.ReadInteger(AName)
+    else
+      Result  := ADefault;
+  end;
+
+var
+  sKey:           String;
+
+begin
+  pSettings := TUnSwRegistry.Create();
+  with pSettings do
+  try
+    FLoading  := True;
+    RootKey   := HKEY_CURRENT_USER;
+
+    if OpenIDEKey() then
+    begin
+      chkForms.Checked          := ReadBoolDef('IncludeForms', FTypeFilter.IncludeForms);
+      chkDataModules.Checked    := ReadBoolDef('IncludeDataModules', FTypeFilter.IncludeDataModules);
+      chkProjectSource.Checked  := ReadBoolDef('IncludeProjectSource', FTypeFilter.IncludeProjectSource);
+
+      if FFormsOnly then
+        sKey  := 'Forms'
+      else
+        sKey  := 'Units';
+
+      Self.ClientWidth        := ReadIntegerDef(sKey + 'DialogWidth', Self.ClientWidth);
+      Self.ClientHeight       := ReadIntegerDef(sKey + 'DialogHeight', Self.ClientHeight);
+      Self.Caption            := 'UnitSwitcher - View ' + sKey;
+
+      CloseKey();
+    end;
+  finally
+    FLoading  := False;
+    FreeAndNil(pSettings);
+  end;
+end;
+
+procedure TfrmUnSwDialog.SaveSettings();
+var
+  sKey:           String;
+
+begin
+  with TUnSwRegistry.Create() do
+  try
+    FLoading  := True;
+    RootKey   := HKEY_CURRENT_USER;
+
+    if OpenIDEKey() then
+    begin
+      WriteBool('IncludeForms', chkForms.Checked);
+      WriteBool('IncludeDataModules', chkDataModules.Checked);
+      WriteBool('IncludeProjectSource', chkProjectSource.Checked);
+
+      if FFormsOnly then
+        sKey  := 'Forms'
+      else
+        sKey  := 'Units';
+
+      WriteInteger(sKey + 'DialogWidth', Self.ClientWidth);
+      WriteInteger(sKey + 'DialogHeight', Self.ClientHeight);
+
+      CloseKey();
+    end;
+  finally
+    FLoading  := False;
+    Free();
+  end;
+end;
+
+
 procedure TfrmUnSwDialog.edtSearchChange(Sender: TObject);
 begin
   FInputFilter.Filter := edtSearch.Text;
@@ -218,23 +300,8 @@ end;
 procedure TfrmUnSwDialog.edtSearchKeyDown(Sender: TObject; var Key: Word;
                                           Shift: TShiftState);
 begin
-  if Shift = [] then
-    case Key of
-      VK_UP:
-        begin
-          if lstUnits.ItemIndex > 0 then
-            lstUnits.ItemIndex  := Pred(lstUnits.ItemIndex);
-
-          Key := 0;
-        end;
-      VK_DOWN:
-        begin
-          if lstUnits.ItemIndex < Pred(lstUnits.Items.Count) then
-            lstUnits.ItemIndex  := Succ(lstUnits.ItemIndex);
-
-          Key := 0;
-        end;
-    end;
+  if (Shift = []) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT]) then
+    lstUnits.Perform(WM_KEYDOWN, Key, 0);
 end;
 
 procedure TfrmUnSwDialog.TypeFilterChange(Sender: TObject);
