@@ -196,7 +196,7 @@ begin
     end else
       if ASource then
       begin
-        ifEditor.Show();
+        AModule.ModuleFileEditors[iModule].Show();
         break;
       end;
   {$ELSE}
