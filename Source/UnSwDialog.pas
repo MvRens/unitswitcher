@@ -128,7 +128,11 @@ begin
   FTypeFilteredList   := TUnSwUnitList.Create();
   FInputFilteredList  := TUnSwUnitList.Create();
   FTypeFilter         := TUnSwUnitTypeFilter.Create(FTypeFilteredList);
-  FInputFilter        := TUnSwUnitSimpleFilter.Create(FInputFilteredList);
+
+  if FFormsOnly then
+    FInputFilter      := TUnSwUnitSimpleFormNameFilter.Create(FInputFilteredList)
+  else
+    FInputFilter      := TUnSwUnitSimpleNameFilter.Create(FInputFilteredList);
   try
     if not FFormsOnly then
     begin
@@ -185,7 +189,7 @@ procedure TfrmUnSwDialog.UpdateTypeFilter();
 begin
   FTypeFilter.IncludeUnits          := not FFormsOnly;
   FTypeFilter.IncludeForms          := (FFormsOnly or chkForms.Checked);
-  FTypeFilter.IncludeDataModules    := ((not FFormsOnly) and chkDataModules.Checked);
+  FTypeFilter.IncludeDataModules    := (FFormsOnly or chkDataModules.Checked);
   FTypeFilter.IncludeProjectSource  := ((not FFormsOnly) and chkProjectSource.Checked);
 
   FTypeFilteredList.Clone(FUnitList);
@@ -256,6 +260,10 @@ begin
   with TListBox(Control) do
   begin
     pUnit := FInputFilteredList[Index];
+    if FFormsOnly and (pUnit is TUnSwModuleUnit) then
+      sText := TUnSwModuleUnit(pUnit).FormName
+    else
+      sText := pUnit.Name;
 
     if odSelected in State then
     begin
@@ -275,7 +283,6 @@ begin
     ilsTypes.Draw(Canvas, rText.Left, rText.Top, FIconVisitor.ImageIndex);
 
     Inc(rText.Left, ilsTypes.Width + 4);
-    sText := pUnit.Name;
     DrawText(Canvas.Handle, PChar(sText), Length(sText), rText, DT_SINGLELINE or
              DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
   end;

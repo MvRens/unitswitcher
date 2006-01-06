@@ -5,7 +5,7 @@ uses
   UnSwObjects;
 
 type
-  TUnSwUnitFilter       = class(TUnSwNoRefIntfObject, IUnSwVisitor)
+  TUnSwUnitFilter               = class(TUnSwNoRefIntfObject, IUnSwVisitor)
   private
     FList:      TUnSwUnitList;
   protected
@@ -20,18 +20,26 @@ type
     constructor Create(const AList: TUnSwUnitList); virtual;
   end;
 
-  TUnSwUnitSimpleFilter = class(TUnSwUnitFilter)
+  TUnSwUnitSimpleFilter         = class(TUnSwUnitFilter)
   private
     FFilter:      String;
 
     procedure SetFilter(const Value: String);
-  protected
-    procedure VisitUnit(const AUnit: TUnSwUnit); override;
   public
     property Filter:      String  read FFilter  write SetFilter;
   end;
 
-  TUnSwUnitTypeFilter   = class(TUnSwUnitFilter)
+  TUnSwUnitSimpleNameFilter     = class(TUnSwUnitSimpleFilter)
+  protected
+    procedure VisitUnit(const AUnit: TUnSwUnit); override;
+  end;
+
+  TUnSwUnitSimpleFormNameFilter = class(TUnSwUnitSimpleNameFilter)
+  protected
+    procedure VisitModule(const AUnit: TUnSwModuleUnit); override;
+  end;
+
+  TUnSwUnitTypeFilter           = class(TUnSwUnitFilter)
   private
     FIncludeDataModules:    Boolean;
     FIncludeForms:          Boolean;
@@ -84,16 +92,27 @@ end;
 
 
 { TUnSwUnitSimpleFilter }
-procedure TUnSwUnitSimpleFilter.VisitUnit(const AUnit: TUnSwUnit);
-begin
-  if (Length(FFilter) > 0) and
-     (AnsiPos(FFilter, LowerCase(AUnit.Name)) = 0) then
-    FilterUnit(AUnit);
-end;
-
 procedure TUnSwUnitSimpleFilter.SetFilter(const Value: String);
 begin
   FFilter := LowerCase(Value);
+end;
+
+
+{ TUnSwUnitSimpleNameFilter }
+procedure TUnSwUnitSimpleNameFilter.VisitUnit(const AUnit: TUnSwUnit);
+begin
+  if (Length(Filter) > 0) and
+     (AnsiPos(Filter, LowerCase(AUnit.Name)) = 0) then
+    FilterUnit(AUnit);
+end;
+
+
+{ TUnSwUnitSimpleFormNameFilter }
+procedure TUnSwUnitSimpleFormNameFilter.VisitModule(const AUnit: TUnSwModuleUnit);
+begin
+  if (Length(Filter) > 0) and
+     (AnsiPos(Filter, LowerCase(AUnit.FormName)) = 0) then
+    FilterUnit(AUnit);
 end;
 
 

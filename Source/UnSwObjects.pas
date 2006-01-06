@@ -73,8 +73,9 @@ type
   private
     FModule:        IOTAModuleInfo;
   protected
-    function GetName(): String; override;
     function GetFileName(): String; override;
+    function GetFormName(): String;
+    function GetName(): String; override;
     function GetUnitType(): TUnSwUnitType;
   public
     constructor Create(const AModule: IOTAModuleInfo);
@@ -82,6 +83,7 @@ type
 
     procedure Activate(const ASource: Boolean); override;
 
+    property FormName:      String        read GetFormName;
     property UnitType:      TUnSwUnitType read GetUnitType;
   end;
 
@@ -192,6 +194,11 @@ end;
 function TUnSwModuleUnit.GetName(): String;
 begin
   Result  := FModule.Name;
+end;
+
+function TUnSwModuleUnit.GetFormName(): String;
+begin
+  Result  := FModule.FormName;
 end;
 
 function TUnSwModuleUnit.GetFileName(): String;
