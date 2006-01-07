@@ -1,3 +1,9 @@
+{: Implements unit handling.
+
+   Last changed:    $Date$
+   Revision:        $Rev$
+   Author:          $Author$
+}
 unit UnSwObjects;
 
 {$I UnSwDefines.inc}
@@ -6,7 +12,6 @@ interface
 uses
   Classes,
   Contnrs,
-  Registry,
   ToolsAPI;
 
 type
@@ -133,13 +138,11 @@ type
                                               write SetItem; default;
   end;
 
-  TUnSwRegistry     = class(TRegistry)
-  public
-    function OpenIDEKey(): Boolean;
-  end;
-
 implementation
 uses
+  {$IFDEF DELPHI7}
+  ActnList,
+  {$ENDIF}
   SysUtils;
 
 
@@ -178,27 +181,27 @@ end;
 procedure TUnSwUnit.OpenModule(const AModule: IOTAModule; const ASource: Boolean);
 {$IFDEF DELPHI7}
 var
-  ifEditor:       IOTAEditor;
-  iModule:        Integer;
+  editor:         IOTAEditor;
+  formEditor:     IOTAFormEditor;
+  moduleIndex:    Integer;
 {$ENDIF}
 
 begin
   {$IFDEF DELPHI7}
-  for iModule := 0 to Pred(AModule.ModuleFileCount) do
-    if Supports(AModule.ModuleFileEditors[iModule], IOTAFormEditor,
-                ifEditor) then
+  for moduleIndex := 0 to Pred(AModule.ModuleFileCount) do
+  begin
+    editor  := AModule.ModuleFileEditors[moduleIndex];
+
+    if not ASource then
     begin
-      if not ASource then
-      begin
-        ifEditor.Show();
-        break;
-      end;
+      if not Assigned(formEditor) then
+        Supports(editor, IOTAFormEditor, formEditor);
     end else
-      if ASource then
-      begin
-        AModule.ModuleFileEditors[iModule].Show();
-        break;
-      end;
+      editor.Show();
+  end;
+
+  if Assigned(formEditor) then
+    formEditor.Show();
   {$ELSE}
   if ASource then
     AModule.ShowFilename(AModule.FileName)
@@ -270,8 +273,30 @@ begin
 end;
 
 procedure TUnSwProjectUnit.Activate(const ASource: Boolean);
+{$IFDEF DELPHI7}
+var
+  actionIndex:    Integer;
+  ntaServices:    INTAServices;
+  action:         TContainedAction;
+{$ENDIF}
+
 begin
-  OpenModule(FProject, False);
+  {$IFDEF DELPHI7}
+  // Bit of a hack, but opening the file itself will result in Delphi 7
+  // reloading the project...
+  ntaServices := (BorlandIDEServices as INTAServices);
+  for actionIndex := 0 to Pred(ntaServices.ActionList.ActionCount) do
+  begin
+    action  := ntaServices.ActionList.Actions[actionIndex];
+    if action.Name = 'ProjectViewSourceCommand' then
+    begin
+      action.Execute();
+      break;
+    end;
+  end;
+  {$ELSE}
+  OpenModule(FProject, True);
+  {$ENDIF}
 end;
 
 procedure TUnSwProjectUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
@@ -286,7 +311,7 @@ end;
 
 function TUnSwProjectUnit.GetFileName(): String;
 begin
-
+  Result  := FProject.FileName;
 end;
 
 
@@ -309,11 +334,11 @@ end;
 
 procedure TUnSwUnitList.AcceptVisitor(const AVisitor: IUnSwVisitor);
 var
-  iItem:        Integer;
+  itemIndex:    Integer;
 
 begin
-  for iItem := Pred(Count) downto 0 do
-    Items[iItem].AcceptVisitor(AVisitor);
+  for itemIndex := Pred(Count) downto 0 do
+    Items[itemIndex].AcceptVisitor(AVisitor);
 end;
 
 function TUnSwUnitList.Add(const AUnit: TUnSwUnit): Integer;
@@ -328,17 +353,17 @@ end;
 
 function TUnSwUnitList.IndexOfFileName(const AFileName: String): Integer;
 var
-  iItem:      Integer;
+  itemIndex:    Integer;
 
 begin
   Result  := -1;
   if Length(AFileName) = 0 then
     exit;
 
-  for iItem := Pred(Count) downto 0 do
-    if SameText(Items[iItem].FileName, AFileName) then
+  for itemIndex := Pred(Count) downto 0 do
+    if SameText(Items[itemIndex].FileName, AFileName) then
     begin
-      Result  := iItem;
+      Result  := itemIndex;
       break;
     end;
 end;
@@ -360,14 +385,14 @@ end;
 
 procedure TUnSwUnitList.Clone(const ASource: TUnSwUnitList);
 var
-  iItem:      Integer;
+  itemIndex:      Integer;
 
 begin
   FItems.Clear();
   FItems.OwnsObjects  := False;
 
-  for iItem := 0 to Pred(ASource.Count) do
-    FItems.Add(ASource[iItem]);
+  for itemIndex := 0 to Pred(ASource.Count) do
+    FItems.Add(ASource[itemIndex]);
 end;
 
 
@@ -384,14 +409,6 @@ end;
 procedure TUnSwUnitList.SetItem(Index: Integer; Value: TUnSwUnit);
 begin
   FItems[Index] := Value;
-end;
-
-
-{ TUnSwRegistry }
-function TUnSwRegistry.OpenIDEKey(): Boolean;
-begin
-  Result  := OpenKey((BorlandIDEServices as IOTAServices).GetBaseRegistryKey() +
-                     '\UnitSwitcher', True);
 end;
 
 end.

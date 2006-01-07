@@ -1,3 +1,9 @@
+{: Implements unit filtering visitors.
+
+   Last changed:    $Date$
+   Revision:        $Rev$
+   Author:          $Author$
+}
 unit UnSwFilters;
 
 interface
@@ -129,21 +135,21 @@ end;
 
 procedure TUnSwUnitTypeFilter.VisitModule(const AUnit: TUnSwModuleUnit);
 var
-  eValidTypes:      TUnSwUnitTypes;
+  validTypes:       TUnSwUnitTypes;
 
 begin
-  eValidTypes := [];
+  validTypes  := [];
 
   if FIncludeDataModules then
-    Include(eValidTypes, swutDataModule);
+    Include(validTypes, swutDataModule);
 
   if FIncludeForms then
-    Include(eValidTypes, swutForm);
+    Include(validTypes, swutForm);
 
   if FIncludeUnits then
-    Include(eValidTypes, swutUnit);
+    Include(validTypes, swutUnit);
 
-  if not (AUnit.UnitType in eValidTypes) then
+  if not (AUnit.UnitType in validTypes) then
     FilterUnit(AUnit);
 end;
 

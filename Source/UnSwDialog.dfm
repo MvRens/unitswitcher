@@ -3,37 +3,47 @@ object frmUnSwDialog: TfrmUnSwDialog
   Top = 83
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher'
-  ClientHeight = 400
-  ClientWidth = 320
+  ClientHeight = 398
+  ClientWidth = 292
   Color = clBtnFace
   Constraints.MinHeight = 240
-  Constraints.MinWidth = 172
+  Constraints.MinWidth = 270
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  Icon.Data = {
+    0000010001001010100001000400280100001600000028000000100000002000
+    0000010004000000000080000000000000000000000000000000000000000000
+    000000008000008000000080800080000000800080008080000080808000C0C0
+    C0000000FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF000000
+    0000000000000000F777777777700000FF8F8F8F8F700000F8F8F8F8F8700000
+    FF0000000F700000F8F8F8F8F8700000F999999999700400F9FFFFFFF9700000
+    F999999999700000F8F8F8F8F8700000FF0000008F700000F8F8F8F8F7700000
+    FF00008F00000000F8F8F8F80F000000FFFFFFFF00000000000000000000E000
+    0000E0000000E0000000E0000000E00000006000000020000000000000002000
+    000060000000E0000000E0000000E0000000E0010000E0030000E0070000}
   OldCreateOrder = False
   Position = poScreenCenter
+  OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
   object sbStatus: TStatusBar
     Left = 0
-    Top = 381
-    Width = 320
+    Top = 379
+    Width = 292
     Height = 19
     Panels = <
       item
         Width = 50
       end>
-    ExplicitTop = 408
-    ExplicitWidth = 299
   end
   object pnlMain: TPanel
     Left = 0
     Top = 0
-    Width = 320
-    Height = 290
+    Width = 292
+    Height = 288
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 4
@@ -43,57 +53,52 @@ object frmUnSwDialog: TfrmUnSwDialog
     object pnlSearch: TPanel
       Left = 4
       Top = 4
-      Width = 312
+      Width = 284
       Height = 25
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitWidth = 291
       DesignSize = (
-        312
+        284
         25)
       object edtSearch: TEdit
         Left = 0
         Top = 0
-        Width = 312
+        Width = 284
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
         OnChange = edtSearchChange
         OnKeyDown = edtSearchKeyDown
-        ExplicitWidth = 291
       end
     end
     object lstUnits: TListBox
       Left = 4
       Top = 29
-      Width = 312
-      Height = 257
+      Width = 284
+      Height = 255
       Style = lbVirtualOwnerDraw
       Align = alClient
       ItemHeight = 20
       TabOrder = 1
       OnData = lstUnitsData
+      OnDblClick = lstUnitsDblClick
       OnDrawItem = lstUnitsDrawItem
-      ExplicitWidth = 291
-      ExplicitHeight = 284
     end
   end
   object pnlButtons: TPanel
     Left = 0
-    Top = 345
-    Width = 320
+    Top = 343
+    Width = 292
     Height = 36
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 2
-    ExplicitTop = 372
-    ExplicitWidth = 299
     DesignSize = (
-      320
+      292
       36)
     object btnCancel: TButton
-      Left = 241
+      Left = 213
       Top = 5
       Width = 75
       Height = 25
@@ -102,10 +107,9 @@ object frmUnSwDialog: TfrmUnSwDialog
       Caption = 'Cancel'
       ModalResult = 2
       TabOrder = 1
-      ExplicitLeft = 220
     end
     object btnOK: TButton
-      Left = 160
+      Left = 132
       Top = 5
       Width = 75
       Height = 25
@@ -114,23 +118,29 @@ object frmUnSwDialog: TfrmUnSwDialog
       Default = True
       ModalResult = 1
       TabOrder = 0
-      ExplicitLeft = 139
+    end
+    object btnConfiguration: TButton
+      Left = 4
+      Top = 5
+      Width = 85
+      Height = 25
+      Caption = '&Configuration'
+      TabOrder = 2
+      OnClick = btnConfigurationClick
     end
   end
   object pnlIncludeTypes: TPanel
     Left = 0
-    Top = 290
-    Width = 320
+    Top = 288
+    Width = 292
     Height = 55
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitTop = 317
-    ExplicitWidth = 299
     object chkDataModules: TCheckBox
       Left = 4
       Top = 19
-      Width = 291
+      Width = 137
       Height = 17
       Caption = 'Show &DataModule units'
       TabOrder = 1
@@ -139,7 +149,7 @@ object frmUnSwDialog: TfrmUnSwDialog
     object chkForms: TCheckBox
       Left = 4
       Top = 2
-      Width = 291
+      Width = 101
       Height = 17
       Caption = 'Show &Form units'
       TabOrder = 0
@@ -148,7 +158,7 @@ object frmUnSwDialog: TfrmUnSwDialog
     object chkProjectSource: TCheckBox
       Left = 4
       Top = 36
-      Width = 291
+      Width = 121
       Height = 17
       Caption = 'Show &Project source'
       TabOrder = 2

@@ -35,6 +35,8 @@ contains
   UnSwClient in '..\..\Source\UnSwClient.pas',
   UnSwObjects in '..\..\Source\UnSwObjects.pas',
   UnSwDialog in '..\..\Source\UnSwDialog.pas' {frmUnSwDialog},
-  UnSwFilters in '..\..\Source\UnSwFilters.pas';
+  UnSwFilters in '..\..\Source\UnSwFilters.pas',
+  UnSwConfiguration in '..\..\Source\UnSwConfiguration.pas' {frmUnSwConfiguration},
+  UnSwSettings in '..\..\Source\UnSwSettings.pas';
 
 end.

@@ -120,7 +120,7 @@
 		</Linker>
 		<Directories>
 			<Directories Name="OutputDir"></Directories>
-			<Directories Name="UnitOutputDir"></Directories>
+			<Directories Name="UnitOutputDir">..\..\Lib\D2006</Directories>
 			<Directories Name="PackageDLLOutputDir">..\..\Lib\D2006</Directories>
 			<Directories Name="PackageDCPOutputDir"></Directories>
 			<Directories Name="SearchPath"></Directories>

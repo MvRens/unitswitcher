@@ -1,3 +1,9 @@
+{: Contains the UnitSwitcher main dialog.
+
+   Last changed:    $Date$
+   Revision:        $Rev$
+   Author:          $Author$
+}
 unit UnSwDialog;
 
 interface
@@ -7,6 +13,7 @@ uses
   Controls,
   ExtCtrls,
   Forms,
+  Graphics,
   ImgList,
   StdCtrls,
   Windows,
@@ -15,18 +22,21 @@ uses
   UnSwFilters;
 
 type
-  TUnSwIconVisitor  = class(TUnSwNoRefIntfObject, IUnSwVisitor)
+  TUnSwStyleVisitor = class(TUnSwNoRefIntfObject, IUnSwVisitor)
   private
+    FColor:             TColor;
     FImageIndex:        Integer;
   protected
     procedure VisitModule(const AUnit: TUnSwModuleUnit);
     procedure VisitProject(const AUnit: TUnSwProjectUnit);
   public
+    property Color:           TColor  read FColor;
     property ImageIndex:      Integer read FImageIndex;
   end;
 
   TfrmUnSwDialog = class(TForm)
     btnCancel:                                  TButton;
+    btnConfiguration:                           TButton;
     btnOK:                                      TButton;
     chkDataModules:                             TCheckBox;
     chkForms:                                   TCheckBox;
@@ -40,9 +50,12 @@ type
     pnlSearch:                                  TPanel;
     sbStatus:                                   TStatusBar;
 
+    procedure FormResize(Sender: TObject);
+    procedure btnConfigurationClick(Sender: TObject);
     procedure edtSearchChange(Sender: TObject);
     procedure edtSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure TypeFilterChange(Sender: TObject);
+    procedure lstUnitsDblClick(Sender: TObject);
     procedure lstUnitsData(Control: TWinControl; Index: Integer; var Data: string);
     procedure lstUnitsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
   private
@@ -57,7 +70,7 @@ type
     FTypeFilter:            TUnSwUnitTypeFilter;
     FInputFilter:           TUnSwUnitSimpleFilter;
 
-    FIconVisitor:           TUnSwIconVisitor;
+    FStyleVisitor:          TUnSwStyleVisitor;
 
     function InternalExecute(): TUnSwUnit;
     procedure UpdateTypeFilter();
@@ -75,28 +88,44 @@ type
 
 implementation
 uses
-  Graphics,
   Messages,
-  SysUtils;
+  SysUtils,
+
+  UnSwConfiguration,
+  UnSwSettings;
 
 
 {$R *.dfm}
 
 
-{ TUnSwIconVisitor }
-procedure TUnSwIconVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
+{ TUnSwStyleVisitor }
+procedure TUnSwStyleVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
 begin
   case AUnit.UnitType of
-    swutUnit:         FImageIndex := 1;
-    swutForm:         FImageIndex := 2;
-    swutDataModule:   FImageIndex := 3;
+    swutUnit:
+      begin
+        FColor      := Settings.Colors.Units;
+        FImageIndex := 1;
+      end;
+    swutForm:
+      begin
+        FColor      := Settings.Colors.Forms;
+        FImageIndex := 2;
+      end;
+    swutDataModule:
+      begin
+        FColor      := Settings.Colors.DataModules;
+        FImageIndex := 3;
+      end
   else
-                      FImageIndex := 0;
+    FColor      := clWindowText;
+    FImageIndex := 0;
   end;
 end;
 
-procedure TUnSwIconVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
+procedure TUnSwStyleVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
+  FColor      := Settings.Colors.ProjectSource;
   FImageIndex := 4;
 end;
 
@@ -115,6 +144,11 @@ begin
   finally
     Free();
   end;
+end;
+
+procedure TfrmUnSwDialog.FormResize(Sender: TObject);
+begin
+  lstUnits.Invalidate();
 end;
 
 function SortByName(Item1, Item2: Pointer): Integer;
@@ -137,18 +171,22 @@ begin
     LoadSettings();
 
     if FFormsOnly then
+    begin
       pnlIncludeTypes.Visible   := False;
+      Self.Caption              := 'UnitSwitcher - View Form';
+    end else
+      Self.Caption              := 'UnitSwitcher - View Unit';
 
     UpdateTypeFilter();
 
-    FIconVisitor  := TUnSwIconVisitor.Create();
+    FStyleVisitor := TUnSwStyleVisitor.Create();
     try
       if Self.ShowModal() = mrOk then
         Result  := GetActiveUnit();
 
       SaveSettings();
     finally
-      FreeAndNil(FIconVisitor);
+      FreeAndNil(FStyleVisitor);
     end;
   finally
     FreeAndNil(FInputFilter);
@@ -160,10 +198,10 @@ end;
 
 procedure TfrmUnSwDialog.UpdateList();
 var
-  pActive:      TUnSwUnit;
+  activeUnit:       TUnSwUnit;
 
 begin
-  pActive := GetActiveUnit();
+  activeUnit  := GetActiveUnit();
 
   FInputFilteredList.Clone(FTypeFilteredList);
   FInputFilteredList.AcceptVisitor(FInputFilter);
@@ -171,8 +209,8 @@ begin
   lstUnits.Count  := FInputFilteredList.Count;
   if FInputFilteredList.Count > 0 then
   begin
-    if Assigned(pActive) then
-      lstUnits.ItemIndex  := FInputFilteredList.IndexOf(pActive);
+    if Assigned(activeUnit) then
+      lstUnits.ItemIndex  := FInputFilteredList.IndexOf(activeUnit);
 
     if lstUnits.ItemIndex = -1 then
       lstUnits.ItemIndex  := 0;
@@ -206,90 +244,53 @@ end;
 
 procedure TfrmUnSwDialog.LoadSettings();
 var
-  pSettings:      TUnSwRegistry;
-
-  function ReadBoolDef(const AName: String; const ADefault: Boolean): Boolean;
-  begin
-    if pSettings.ValueExists(AName) then
-      Result  := pSettings.ReadBool(AName)
-    else
-      Result  := ADefault;
-  end;
-
-  function ReadIntegerDef(const AName: String; const ADefault: Integer): Integer;
-
-  begin
-    if pSettings.ValueExists(AName) then
-      Result  := pSettings.ReadInteger(AName)
-    else
-      Result  := ADefault;
-  end;
-
-var
-  sKey:           String;
+  dialogSettings:       TUnSwDialogSettings;
 
 begin
-  pSettings := TUnSwRegistry.Create();
-  with pSettings do
+  if FFormsOnly then
+    dialogSettings  := Settings.FormsDialog
+  else
+    dialogSettings  := Settings.UnitsDialog;
+
+  FLoading  := True;
   try
-    FLoading  := True;
-    RootKey   := HKEY_CURRENT_USER;
+    chkDataModules.Checked    := dialogSettings.IncludeDataModules;
+    chkForms.Checked          := dialogSettings.IncludeForms;
+    chkProjectSource.Checked  := dialogSettings.IncludeProjectSource;
 
-    if OpenIDEKey() then
-    begin
-      chkForms.Checked          := ReadBoolDef('IncludeForms', FTypeFilter.IncludeForms);
-      chkDataModules.Checked    := ReadBoolDef('IncludeDataModules', FTypeFilter.IncludeDataModules);
-      chkProjectSource.Checked  := ReadBoolDef('IncludeProjectSource', FTypeFilter.IncludeProjectSource);
-
-      if FFormsOnly then
-        sKey  := 'Forms'
-      else
-        sKey  := 'Units';
-
-      Self.ClientWidth        := ReadIntegerDef(sKey + 'DialogWidth', Self.ClientWidth);
-      Self.ClientHeight       := ReadIntegerDef(sKey + 'DialogHeight', Self.ClientHeight);
-      Self.Caption            := 'UnitSwitcher - View ' + sKey;
-
-      CloseKey();
-    end;
+    Self.ClientWidth          := dialogSettings.Width;
+    Self.ClientHeight         := dialogSettings.Height;
   finally
     FLoading  := False;
-    FreeAndNil(pSettings);
   end;
 end;
 
 procedure TfrmUnSwDialog.SaveSettings();
 var
-  sKey:           String;
+  dialogSettings:       TUnSwDialogSettings;
 
 begin
-  with TUnSwRegistry.Create() do
-  try
-    FLoading  := True;
-    RootKey   := HKEY_CURRENT_USER;
+  if FFormsOnly then
+    dialogSettings  := Settings.FormsDialog
+  else
+    dialogSettings  := Settings.UnitsDialog;
 
-    if OpenIDEKey() then
-    begin
-      WriteBool('IncludeForms', chkForms.Checked);
-      WriteBool('IncludeDataModules', chkDataModules.Checked);
-      WriteBool('IncludeProjectSource', chkProjectSource.Checked);
+  dialogSettings.IncludeDataModules   := chkForms.Checked;
+  dialogSettings.IncludeForms         := chkDataModules.Checked;
+  dialogSettings.IncludeProjectSource := chkProjectSource.Checked;
 
-      if FFormsOnly then
-        sKey  := 'Forms'
-      else
-        sKey  := 'Units';
+  dialogSettings.Width                := Self.ClientWidth;
+  dialogSettings.Height               := Self.ClientHeight;
 
-      WriteInteger(sKey + 'DialogWidth', Self.ClientWidth);
-      WriteInteger(sKey + 'DialogHeight', Self.ClientHeight);
-
-      CloseKey();
-    end;
-  finally
-    FLoading  := False;
-    Free();
-  end;
+  Settings.Save();
 end;
 
+
+procedure TfrmUnSwDialog.btnConfigurationClick(Sender: TObject);
+begin
+  if TfrmUnSwConfiguration.Execute() then
+    lstUnits.Invalidate();
+end;
 
 procedure TfrmUnSwDialog.edtSearchChange(Sender: TObject);
 begin
@@ -310,6 +311,11 @@ begin
     UpdateTypeFilter();
 end;
 
+procedure TfrmUnSwDialog.lstUnitsDblClick(Sender: TObject);
+begin
+  btnOK.Click();
+end;
+
 procedure TfrmUnSwDialog.lstUnitsData(Control: TWinControl; Index: Integer;
                                       var Data: string);
 begin
@@ -319,18 +325,20 @@ end;
 procedure TfrmUnSwDialog.lstUnitsDrawItem(Control: TWinControl; Index: Integer;
                                           Rect: TRect; State: TOwnerDrawState);
 var
-  pUnit:      TUnSwUnit;
-  rText:      TRect;
-  sText:      String;
+  currentUnit:  TUnSwUnit;
+  textRect:     TRect;
+  text:         String;
 
 begin
   with TListBox(Control) do
   begin
-    pUnit := FInputFilteredList[Index];
-    if FFormsOnly and (pUnit is TUnSwModuleUnit) then
-      sText := TUnSwModuleUnit(pUnit).FormName
+    currentUnit := FInputFilteredList[Index];
+    currentUnit.AcceptVisitor(FStyleVisitor);
+    
+    if FFormsOnly and (currentUnit is TUnSwModuleUnit) then
+      text  := TUnSwModuleUnit(currentUnit).FormName
     else
-      sText := pUnit.Name;
+      text  := currentUnit.Name;
 
     if odSelected in State then
     begin
@@ -339,18 +347,19 @@ begin
     end else
     begin
       Canvas.Brush.Color  := clWindow;
-      Canvas.Font.Color   := clWindowText;
+      if Settings.Colors.Enabled then
+        Canvas.Font.Color := FStyleVisitor.Color
+      else
+        Canvas.Font.Color := clWindowText;
     end;
     Canvas.FillRect(Rect);
 
-    rText := Rect;
-    InflateRect(rText, -2, -2);
+    textRect  := Rect;
+    InflateRect(textRect, -2, -2);
+    ilsTypes.Draw(Canvas, textRect.Left, textRect.Top, FStyleVisitor.ImageIndex);
 
-    pUnit.AcceptVisitor(FIconVisitor);
-    ilsTypes.Draw(Canvas, rText.Left, rText.Top, FIconVisitor.ImageIndex);
-
-    Inc(rText.Left, ilsTypes.Width + 4);
-    DrawText(Canvas.Handle, PChar(sText), Length(sText), rText, DT_SINGLELINE or
+    Inc(textRect.Left, ilsTypes.Width + 4);
+    DrawText(Canvas.Handle, PChar(text), Length(text), textRect, DT_SINGLELINE or
              DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
   end;
 end;

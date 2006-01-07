@@ -1,3 +1,9 @@
+{: Connects UnitSwitcher to the IDE.
+
+   Last changed:    $Date$
+   Revision:        $Rev$
+   Author:          $Author$
+}
 {$ASSERTIONS ON}
 unit UnSwClient;
 
@@ -39,14 +45,14 @@ type
 { TUnitSwitcherHook}
 constructor TUnitSwitcherHook.Create();
 var
-  iAction:    Integer;
-  ifNTA:      INTAServices;
-  pAction:    TContainedAction;
+  actionIndex:    Integer;
+  ntaServices:    INTAServices;
+  action:         TContainedAction;
 
 begin
   try
     Assert(Assigned(BorlandIDEServices), 'BorlandIDEServices not available.');
-    Assert(Supports(BorlandIDEServices, INTAServices, ifNTA),
+    Assert(Supports(BorlandIDEServices, INTAServices, ntaServices),
                     'BorlandIDEServices does not support the ' +
                     'INTAServices interface.');
     Assert(Supports(BorlandIDEServices, IOTAModuleServices),
@@ -58,19 +64,19 @@ begin
                     'IOTAActionServices interface.');
     {$ENDIF}
 
-    for iAction := 0 to Pred(ifNTA.ActionList.ActionCount) do
+    for actionIndex := 0 to Pred(ntaServices.ActionList.ActionCount) do
     begin
-      pAction := ifNTA.ActionList.Actions[iAction];
-      if pAction.Name = 'ViewUnitCommand' then
+      action  := ntaServices.ActionList.Actions[actionIndex];
+      if action.Name = 'ViewUnitCommand' then
       begin
-        FOldUnitExecute   := pAction.OnExecute;
-        pAction.OnExecute := NewExecute;
-        FViewUnitAction   := pAction;
-      end else if pAction.Name = 'ViewFormCommand' then
+        FOldUnitExecute   := action.OnExecute;
+        action.OnExecute  := NewExecute;
+        FViewUnitAction   := action;
+      end else if action.Name = 'ViewFormCommand' then
       begin
-        FOldFormExecute   := pAction.OnExecute;
-        pAction.OnExecute := NewExecute;
-        FViewFormAction   := pAction;
+        FOldFormExecute   := action.OnExecute;
+        action.OnExecute  := NewExecute;
+        FViewFormAction   := action;
       end;
     end;
 
@@ -98,32 +104,32 @@ end;
 
 function TUnitSwitcherHook.ActiveFileName(): String;
 var
-  ifModule:     IOTAModule;
+  module:     IOTAModule;
 
 begin
-  Result    := '';
-  ifModule  := (BorlandIDEServices as IOTAModuleServices).CurrentModule;
-  if Assigned(ifModule) then
+  Result  := '';
+  module  := (BorlandIDEServices as IOTAModuleServices).CurrentModule;
+  if Assigned(module) then
   begin
-    if Assigned(ifModule.CurrentEditor) then
-      Result  := ifModule.FileName;
+    if Assigned(module.CurrentEditor) then
+      Result  := module.FileName;
   end;
 end;
 
 {$IFDEF DELPHI7}
 function TUnitSwitcherHook.ActiveGroup(): IOTAProjectGroup;
 var
-  ifModule:     IOTAModule;
-  ifModules:    IOTAModuleServices;
-  iModule:      Integer;
+  module:           IOTAModule;
+  moduleServices:   IOTAModuleServices;
+  moduleIndex:      Integer;
 
 begin
-  Result    := nil;
-  ifModules := (BorlandIDEServices as IOTAModuleServices);
-  for iModule := 0 to Pred(ifModules.ModuleCount) do
+  Result          := nil;
+  moduleServices  := (BorlandIDEServices as IOTAModuleServices);
+  for moduleIndex := 0 to Pred(moduleServices.ModuleCount) do
   begin
-    ifModule  := ifModules.Modules[iModule];
-    if Supports(ifModule, IOTAProjectGroup, Result) then
+    module  := moduleServices.Modules[moduleIndex];
+    if Supports(module, IOTAProjectGroup, Result) then
       break;
   end;
 end;
@@ -132,64 +138,64 @@ end;
 function TUnitSwitcherHook.ActiveProject(): IOTAProject;
 {$IFDEF DELPHI7}
 var
-  ifGroup:      IOTAProjectGroup;
-  ifModule:     IOTAModule;
-  ifModules:    IOTAModuleServices;
-  iModule:      Integer;
+  projectGroup:       IOTAProjectGroup;
+  module:             IOTAModule;
+  moduleServices:     IOTAModuleServices;
+  moduleIndex:        Integer;
 {$ENDIF}
 
 begin
   {$IFDEF DELPHI7}
-  Result  := nil;
-  ifGroup := ActiveGroup();
-  if not Assigned(ifGroup) then
+  Result        := nil;
+  projectGroup  := ActiveGroup();
+  if not Assigned(projectGroup) then
   begin
-    ifModules := (BorlandIDEServices as IOTAModuleServices);
-    for iModule := 0 to Pred(ifModules.ModuleCount) do
+    moduleServices  := (BorlandIDEServices as IOTAModuleServices);
+    for moduleIndex := 0 to Pred(moduleServices.ModuleCount) do
     begin
-      ifModule  := ifModules.Modules[iModule];
-      if Supports(ifModule, IOTAProject, Result) then
+      module  := moduleServices.Modules[moduleIndex];
+      if Supports(module, IOTAProject, Result) then
         break;
     end;
   end else
-    Result  := ifGroup.ActiveProject;
+    Result  := projectGroup.ActiveProject;
   {$ELSE}
-  Result  := (BorlandIDEServices as IOTAModuleServices).GetActiveProject
+  Result  := (BorlandIDEServices as IOTAModuleServices).GetActiveProject();
   {$ENDIF}
 end;
 
 
 procedure TUnitSwitcherHook.NewExecute(Sender: TObject);
 var
-  iActive:    Integer;
-  ifProject:  IOTAProject;
-  iModule:    Integer;
-  pActive:    TUnSwUnit;
-  pUnits:     TUnSwUnitList;
+  activeIndex:    Integer;
+  project:        IOTAProject;
+  moduleIndex:    Integer;
+  activeUnit:     TUnSwUnit;
+  unitList:       TUnSwUnitList;
 
 begin
-  ifProject := ActiveProject();
-  if not Assigned(ifProject) then
+  project := ActiveProject();
+  if not Assigned(project) then
     exit;
 
-  pUnits    := TUnSwUnitList.Create();
+  unitList  := TUnSwUnitList.Create();
   try
-    pUnits.Add(TUnSwProjectUnit.Create(ifProject));
+    unitList.Add(TUnSwProjectUnit.Create(project));
 
-    for iModule := 0 to Pred(ifProject.GetModuleCount) do
-      pUnits.Add(TUnSwModuleUnit.Create(ifProject.GetModule(iModule)));
+    for moduleIndex := 0 to Pred(project.GetModuleCount) do
+      unitList.Add(TUnSwModuleUnit.Create(project.GetModule(moduleIndex)));
 
-    pActive := nil;
-    iActive := pUnits.IndexOfFileName(ActiveFileName());
-    if iActive > -1 then
-      pActive := pUnits[iActive];
+    activeUnit  := nil;
+    activeIndex := unitList.IndexOfFileName(ActiveFileName());
+    if activeIndex > -1 then
+      activeUnit  := unitList[activeIndex];
 
-    pActive := TfrmUnSwDialog.Execute(pUnits, (Sender = FViewFormAction),
-                                      pActive);
-    if Assigned(pActive) then
-      pActive.Activate((Sender = FViewUnitAction));
+    activeUnit  := TfrmUnSwDialog.Execute(unitList, (Sender = FViewFormAction),
+                                          activeUnit);
+    if Assigned(activeUnit) then
+      activeUnit.Activate((Sender = FViewUnitAction));
   finally
-    FreeAndNil(pUnits);
+    FreeAndNil(unitList);
   end;
 end;
 
