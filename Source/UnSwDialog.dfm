@@ -27,6 +27,7 @@ object frmUnSwDialog: TfrmUnSwDialog
   OldCreateOrder = False
   Position = poScreenCenter
   OnResize = FormResize
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object sbStatus: TStatusBar
@@ -48,8 +49,6 @@ object frmUnSwDialog: TfrmUnSwDialog
     BevelOuter = bvNone
     BorderWidth = 4
     TabOrder = 0
-    ExplicitWidth = 299
-    ExplicitHeight = 317
     object pnlSearch: TPanel
       Left = 4
       Top = 4
@@ -80,6 +79,7 @@ object frmUnSwDialog: TfrmUnSwDialog
       Style = lbVirtualOwnerDraw
       Align = alClient
       ItemHeight = 20
+      MultiSelect = True
       TabOrder = 1
       OnData = lstUnitsData
       OnDblClick = lstUnitsDblClick
@@ -571,5 +571,14 @@ object frmUnSwDialog: TfrmUnSwDialog
       E000E0000000F000E000E0000000F000E000E0000000F000E001E0010000F000
       E003E003FFFFF000E007E007FFFFF00000000000000000000000000000000000
       000000000000}
+  end
+  object alMain: TActionList
+    Left = 36
+    Top = 32
+    object actSelectAll: TAction
+      Caption = 'Select &All'
+      ShortCut = 16449
+      OnExecute = actSelectAllExecute
+    end
   end
 end

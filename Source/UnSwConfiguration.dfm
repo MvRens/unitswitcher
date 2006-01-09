@@ -27,7 +27,6 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
     ActivePage = tsGeneral
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
-    ExplicitHeight = 299
     object tsGeneral: TTabSheet
       Caption = 'General'
       object chkCustomColor: TCheckBox
@@ -263,17 +262,16 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Caption = 'Version 0.2'
       end
       object TLabel
-        Left = 56
-        Top = 106
+        Left = 135
+        Top = 23
         Width = 145
         Height = 13
         Anchors = [akLeft, akBottom]
         Caption = 'Copyright '#169' 2006 X'#178'Software'
-        ExplicitTop = 196
       end
       object TLabel
         Left = 56
-        Top = 130
+        Top = 90
         Width = 225
         Height = 41
         Anchors = [akLeft, akRight, akBottom]
@@ -282,19 +280,33 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
           'UnitSwitcher is released as open-source under the zlib/libpng OS' +
           'I-approved license. See license.txt for details.'
         WordWrap = True
-        ExplicitTop = 220
       end
       object TLabel
         Left = 56
-        Top = 56
+        Top = 52
         Width = 225
         Height = 29
         Anchors = [akLeft, akTop, akRight]
         AutoSize = False
         Caption = 
-          'Many thanks to Richard L. for the idea, feedback and beta testin' +
-          'g.'
+          'Many thanks to Richard Lichtendahl for the idea, feedback and be' +
+          'ta testing.'
         WordWrap = True
+      end
+      object lblBugReport: TLabel
+        Left = 56
+        Top = 156
+        Width = 75
+        Height = 13
+        Cursor = crHandPoint
+        Caption = 'Report a bug...'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlue
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsUnderline]
+        ParentFont = False
+        OnClick = lblBugReportClick
       end
     end
   end
@@ -321,7 +333,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   end
   object dlgColor: TColorDialog
     Options = [cdFullOpen]
-    Left = 8
-    Top = 216
+    Left = 12
+    Top = 176
   end
 end

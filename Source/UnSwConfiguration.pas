@@ -28,6 +28,7 @@ type
     chkCustomColor:                             TCheckBox;
     dlgColor:                                   TColorDialog;
     imgAbout:                                   TImage;
+    lblBugReport:                               TLabel;
     lblDataModuleColor:                         TLabel;
     lblFormColor:                               TLabel;
     lblProjectColor:                            TLabel;
@@ -37,8 +38,9 @@ type
     pnlCustomColor:                             TPanel;
     tsAbout:                                    TTabSheet;
     tsGeneral:                                  TTabSheet;
-    
+
     procedure chkCustomColorClick(Sender: TObject);
+    procedure lblBugReportClick(Sender: TObject);
     procedure PickColor(Sender: TObject);
   private
     FLabels:        array[0..3] of TLabel;
@@ -53,6 +55,9 @@ type
 
 implementation
 uses
+  ShellAPI,
+  Windows,
+
   UnSwSettings;
 
 {$R *.dfm}
@@ -85,6 +90,11 @@ begin
     SaveSettings();
 end;
 
+
+procedure TfrmUnSwConfiguration.lblBugReportClick(Sender: TObject);
+begin
+  ShellExecute(0, 'open', 'http://projects.kamadev.net/', nil, nil, SW_SHOWNORMAL);
+end;
 
 procedure TfrmUnSwConfiguration.LoadSettings();
 begin

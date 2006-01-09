@@ -115,6 +115,9 @@ type
   private
     FItems:       TObjectList;
 
+    function GetOwnsObjects(): Boolean;
+    procedure SetOwnsObjects(const Value: Boolean);
+
     function GetCount(): Integer;
     function GetItem(Index: Integer): TUnSwUnit;
     procedure SetItem(Index: Integer; Value: TUnSwUnit);
@@ -136,6 +139,8 @@ type
     property Count:                 Integer   read GetCount;
     property Items[Index: Integer]: TUnSwUnit read GetItem
                                               write SetItem; default;
+    property OwnsObjects:           Boolean   read GetOwnsObjects
+                                              write SetOwnsObjects;
   end;
 
 implementation
@@ -179,35 +184,28 @@ end;
 
 
 procedure TUnSwUnit.OpenModule(const AModule: IOTAModule; const ASource: Boolean);
-{$IFDEF DELPHI7}
 var
   editor:         IOTAEditor;
   formEditor:     IOTAFormEditor;
+  isForm:         Boolean;
   moduleIndex:    Integer;
-{$ENDIF}
 
 begin
-  {$IFDEF DELPHI7}
+  formEditor  := nil;
   for moduleIndex := 0 to Pred(AModule.ModuleFileCount) do
   begin
     editor  := AModule.ModuleFileEditors[moduleIndex];
+    isForm  := Supports(editor, IOTAFormEditor);
 
-    if not ASource then
-    begin
-      if not Assigned(formEditor) then
-        Supports(editor, IOTAFormEditor, formEditor);
-    end else
+    if (not ASource) and (isForm) and (not Assigned(formEditor)) then
+      formEditor  := (editor as IOTAFormEditor);
+
+    if not isForm then
       editor.Show();
   end;
 
   if Assigned(formEditor) then
     formEditor.Show();
-  {$ELSE}
-  if ASource then
-    AModule.ShowFilename(AModule.FileName)
-  else
-    AModule.Show();
-  {$ENDIF}
 end;
 
 
@@ -409,6 +407,16 @@ end;
 procedure TUnSwUnitList.SetItem(Index: Integer; Value: TUnSwUnit);
 begin
   FItems[Index] := Value;
+end;
+
+function TUnSwUnitList.GetOwnsObjects(): Boolean;
+begin
+  Result  := FItems.OwnsObjects;
+end;
+
+procedure TUnSwUnitList.SetOwnsObjects(const Value: Boolean);
+begin
+  FItems.OwnsObjects  := Value;
 end;
 
 end.

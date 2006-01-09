@@ -8,6 +8,7 @@ unit UnSwDialog;
 
 interface
 uses
+  ActnList,
   Classes,
   ComCtrls,
   Controls,
@@ -49,6 +50,10 @@ type
     pnlMain:                                    TPanel;
     pnlSearch:                                  TPanel;
     sbStatus:                                   TStatusBar;
+    alMain: TActionList;
+    actSelectAll: TAction;
+    procedure FormShow(Sender: TObject);
+    procedure actSelectAllExecute(Sender: TObject);
 
     procedure FormResize(Sender: TObject);
     procedure btnConfigurationClick(Sender: TObject);
@@ -72,18 +77,18 @@ type
 
     FStyleVisitor:          TUnSwStyleVisitor;
 
-    function InternalExecute(): TUnSwUnit;
+    function InternalExecute(): TUnSwUnitList;
     procedure UpdateTypeFilter();
     procedure UpdateList();
 
-    function GetActiveUnit(): TUnSwUnit;
+    function GetActiveUnits(): TUnSwUnitList;
 
     procedure LoadSettings();
     procedure SaveSettings();
   public
     class function Execute(const AUnits: TUnSwUnitList;
                            const AFormsOnly: Boolean;
-                           const AActive: TUnSwUnit = nil): TUnSwUnit;
+                           const AActive: TUnSwUnit = nil): TUnSwUnitList;
   end;
 
 implementation
@@ -133,7 +138,7 @@ end;
 { TfrmUnSwDialog }
 class function TfrmUnSwDialog.Execute(const AUnits: TUnSwUnitList;
                                       const AFormsOnly: Boolean;
-                                      const AActive: TUnSwUnit): TUnSwUnit;
+                                      const AActive: TUnSwUnit): TUnSwUnitList;
 begin
   with Self.Create(nil) do
   try
@@ -151,12 +156,18 @@ begin
   lstUnits.Invalidate();
 end;
 
+procedure TfrmUnSwDialog.FormShow(Sender: TObject);
+begin
+  // Setting ListBox.Selected[x] won't work before OnShow...
+  UpdateTypeFilter();
+end;
+
 function SortByName(Item1, Item2: Pointer): Integer;
 begin
   Result  := CompareText(TUnSwUnit(Item1).Name, TUnSwUnit(Item2).Name)
 end;
 
-function TfrmUnSwDialog.InternalExecute(): TUnSwUnit;
+function TfrmUnSwDialog.InternalExecute(): TUnSwUnitList;
 begin
   Result              := nil;
   FTypeFilteredList   := TUnSwUnitList.Create();
@@ -177,12 +188,10 @@ begin
     end else
       Self.Caption              := 'UnitSwitcher - View Unit';
 
-    UpdateTypeFilter();
-
     FStyleVisitor := TUnSwStyleVisitor.Create();
     try
       if Self.ShowModal() = mrOk then
-        Result  := GetActiveUnit();
+        Result  := GetActiveUnits();
 
       SaveSettings();
     finally
@@ -199,9 +208,12 @@ end;
 procedure TfrmUnSwDialog.UpdateList();
 var
   activeUnit:       TUnSwUnit;
+  activeUnits:      TUnSwUnitList;
+  itemIndex:        Integer;
+  listIndex:        Integer;
 
 begin
-  activeUnit  := GetActiveUnit();
+  activeUnits := GetActiveUnits();
 
   FInputFilteredList.Clone(FTypeFilteredList);
   FInputFilteredList.AcceptVisitor(FInputFilter);
@@ -209,11 +221,21 @@ begin
   lstUnits.Count  := FInputFilteredList.Count;
   if FInputFilteredList.Count > 0 then
   begin
-    if Assigned(activeUnit) then
-      lstUnits.ItemIndex  := FInputFilteredList.IndexOf(activeUnit);
+    lstUnits.ClearSelection();
 
-    if lstUnits.ItemIndex = -1 then
-      lstUnits.ItemIndex  := 0;
+    if Assigned(activeUnits) then
+    try
+      for itemIndex := 0 to Pred(activeUnits.Count) do
+      begin
+        activeUnit  := activeUnits[itemIndex];
+        listIndex   := FInputFilteredList.IndexOf(activeUnit);
+        if listIndex > -1 then
+          lstUnits.Selected[listIndex]  := True;
+      end;
+    finally
+      FreeAndNil(activeUnits);
+    end else
+      lstUnits.Selected[0]  := True;
   end;
 end;
 
@@ -230,15 +252,27 @@ begin
   UpdateList();
 end;
 
-function TfrmUnSwDialog.GetActiveUnit(): TUnSwUnit;
+function TfrmUnSwDialog.GetActiveUnits(): TUnSwUnitList;
+var
+  itemIndex:      Integer;
+
 begin
-  Result  := FActiveUnit;
-  if not Assigned(Result) then
+  Result  := nil;
+
+  if Assigned(FActiveUnit) then
   begin
-    if lstUnits.ItemIndex > -1 then
-      Result  := FInputFilteredList[lstUnits.ItemIndex];
-  end else
-    FActiveUnit := nil;
+    Result              := TUnSwUnitList.Create();
+    Result.OwnsObjects  := False;
+    Result.Add(FActiveUnit);
+    FActiveUnit         := nil;
+  end else if lstUnits.SelCount > 0 then
+  begin
+    Result              := TUnSwUnitList.Create();
+    Result.OwnsObjects  := False;
+    for itemIndex := 0 to Pred(lstUnits.Items.Count) do
+      if lstUnits.Selected[itemIndex] then
+        Result.Add(FInputFilteredList[itemIndex]);
+  end;
 end;
 
 
@@ -286,6 +320,11 @@ begin
 end;
 
 
+procedure TfrmUnSwDialog.actSelectAllExecute(Sender: TObject);
+begin
+  lstUnits.SelectAll();
+end;
+
 procedure TfrmUnSwDialog.btnConfigurationClick(Sender: TObject);
 begin
   if TfrmUnSwConfiguration.Execute() then
@@ -301,7 +340,9 @@ end;
 procedure TfrmUnSwDialog.edtSearchKeyDown(Sender: TObject; var Key: Word;
                                           Shift: TShiftState);
 begin
-  if (Shift = []) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT]) then
+  if ((Shift = []) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) or
+     ((Shift = [ssCtrl]) and (Key in [VK_UP, VK_DOWN, VK_HOME, VK_END])) or
+     ((Shift = [ssShift]) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) then
     lstUnits.Perform(WM_KEYDOWN, Key, 0);
 end;
 

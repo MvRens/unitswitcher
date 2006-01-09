@@ -168,9 +168,11 @@ end;
 procedure TUnitSwitcherHook.NewExecute(Sender: TObject);
 var
   activeIndex:    Integer;
-  project:        IOTAProject;
-  moduleIndex:    Integer;
   activeUnit:     TUnSwUnit;
+  itemIndex:      Integer;
+  moduleIndex:    Integer;
+  project:        IOTAProject;
+  selectedUnits:  TUnSwUnitList;
   unitList:       TUnSwUnitList;
 
 begin
@@ -190,10 +192,15 @@ begin
     if activeIndex > -1 then
       activeUnit  := unitList[activeIndex];
 
-    activeUnit  := TfrmUnSwDialog.Execute(unitList, (Sender = FViewFormAction),
-                                          activeUnit);
-    if Assigned(activeUnit) then
-      activeUnit.Activate((Sender = FViewUnitAction));
+    selectedUnits := TfrmUnSwDialog.Execute(unitList, (Sender = FViewFormAction),
+                                            activeUnit);
+    if Assigned(selectedUnits) then
+    try
+      for itemIndex := 0 to Pred(selectedUnits.Count) do
+        selectedUnits[itemIndex].Activate((Sender = FViewUnitAction));
+    finally
+      FreeAndNil(selectedUnits);
+    end;
   finally
     FreeAndNil(unitList);
   end;
