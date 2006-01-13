@@ -259,7 +259,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Top = 23
         Width = 54
         Height = 13
-        Caption = 'Version 0.2'
+        Caption = 'Version 0.3'
       end
       object TLabel
         Left = 135
@@ -328,6 +328,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
     Height = 25
     Anchors = [akRight, akBottom]
     Caption = 'OK'
+    Default = True
     ModalResult = 1
     TabOrder = 2
   end

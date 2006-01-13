@@ -4,10 +4,10 @@ object frmUnSwDialog: TfrmUnSwDialog
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher'
   ClientHeight = 398
-  ClientWidth = 292
+  ClientWidth = 311
   Color = clBtnFace
   Constraints.MinHeight = 240
-  Constraints.MinWidth = 270
+  Constraints.MinWidth = 290
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -33,7 +33,7 @@ object frmUnSwDialog: TfrmUnSwDialog
   object sbStatus: TStatusBar
     Left = 0
     Top = 379
-    Width = 292
+    Width = 311
     Height = 19
     Panels = <
       item
@@ -43,8 +43,8 @@ object frmUnSwDialog: TfrmUnSwDialog
   object pnlMain: TPanel
     Left = 0
     Top = 0
-    Width = 292
-    Height = 288
+    Width = 311
+    Height = 307
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 4
@@ -52,18 +52,18 @@ object frmUnSwDialog: TfrmUnSwDialog
     object pnlSearch: TPanel
       Left = 4
       Top = 4
-      Width = 284
+      Width = 303
       Height = 25
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
       DesignSize = (
-        284
+        303
         25)
       object edtSearch: TEdit
         Left = 0
         Top = 0
-        Width = 284
+        Width = 303
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 0
@@ -74,12 +74,13 @@ object frmUnSwDialog: TfrmUnSwDialog
     object lstUnits: TListBox
       Left = 4
       Top = 29
-      Width = 284
-      Height = 255
+      Width = 303
+      Height = 274
       Style = lbVirtualOwnerDraw
       Align = alClient
       ItemHeight = 20
       MultiSelect = True
+      PopupMenu = pmnUnits
       TabOrder = 1
       OnData = lstUnitsData
       OnDblClick = lstUnitsDblClick
@@ -89,16 +90,16 @@ object frmUnSwDialog: TfrmUnSwDialog
   object pnlButtons: TPanel
     Left = 0
     Top = 343
-    Width = 292
+    Width = 311
     Height = 36
     Align = alBottom
     BevelOuter = bvNone
-    TabOrder = 2
+    TabOrder = 1
     DesignSize = (
-      292
+      311
       36)
     object btnCancel: TButton
-      Left = 213
+      Left = 232
       Top = 5
       Width = 75
       Height = 25
@@ -109,7 +110,7 @@ object frmUnSwDialog: TfrmUnSwDialog
       TabOrder = 1
     end
     object btnOK: TButton
-      Left = 132
+      Left = 151
       Top = 5
       Width = 75
       Height = 25
@@ -131,38 +132,65 @@ object frmUnSwDialog: TfrmUnSwDialog
   end
   object pnlIncludeTypes: TPanel
     Left = 0
-    Top = 288
-    Width = 292
-    Height = 55
+    Top = 307
+    Width = 311
+    Height = 36
     Align = alBottom
     BevelOuter = bvNone
-    TabOrder = 1
-    object chkDataModules: TCheckBox
-      Left = 4
-      Top = 19
-      Width = 137
-      Height = 17
-      Caption = 'Show &DataModule units'
-      TabOrder = 1
-      OnClick = TypeFilterChange
-    end
-    object chkForms: TCheckBox
-      Left = 4
-      Top = 2
-      Width = 101
-      Height = 17
-      Caption = 'Show &Form units'
+    TabOrder = 3
+    object pnlIncludeUnitTypes: TPanel
+      Left = 149
+      Top = 0
+      Width = 162
+      Height = 36
+      Align = alClient
+      BevelOuter = bvNone
       TabOrder = 0
-      OnClick = TypeFilterChange
+      object chkProjectSource: TCheckBox
+        Left = 4
+        Top = 17
+        Width = 121
+        Height = 17
+        Caption = 'Show &Project source'
+        TabOrder = 0
+        OnClick = TypeFilterChange
+      end
+      object chkUnits: TCheckBox
+        Left = 4
+        Top = 0
+        Width = 77
+        Height = 17
+        Caption = 'Show &Units'
+        TabOrder = 1
+        OnClick = TypeFilterChange
+      end
     end
-    object chkProjectSource: TCheckBox
-      Left = 4
-      Top = 36
-      Width = 121
-      Height = 17
-      Caption = 'Show &Project source'
-      TabOrder = 2
-      OnClick = TypeFilterChange
+    object pnlIncludeFormTypes: TPanel
+      Left = 0
+      Top = 0
+      Width = 149
+      Height = 36
+      Align = alLeft
+      BevelOuter = bvNone
+      TabOrder = 1
+      object chkDataModules: TCheckBox
+        Left = 4
+        Top = 19
+        Width = 137
+        Height = 17
+        Caption = 'Show &DataModule units'
+        TabOrder = 0
+        OnClick = TypeFilterChange
+      end
+      object chkForms: TCheckBox
+        Left = 4
+        Top = 2
+        Width = 101
+        Height = 17
+        Caption = 'Show &Form units'
+        TabOrder = 1
+        OnClick = TypeFilterChange
+      end
     end
   end
   object ilsTypes: TImageList
@@ -579,6 +607,71 @@ object frmUnSwDialog: TfrmUnSwDialog
       Caption = 'Select &All'
       ShortCut = 16449
       OnExecute = actSelectAllExecute
+    end
+    object actSelectInvert: TAction
+      Caption = '&Invert Selection'
+      ShortCut = 16457
+      OnExecute = actSelectInvertExecute
+    end
+    object actSortByName: TAction
+      Caption = 'Sort by &Name'
+      GroupIndex = 1
+      ShortCut = 49230
+      OnExecute = SortExecute
+    end
+    object actSortByType: TAction
+      Caption = 'Sort by &Type'
+      GroupIndex = 1
+      ShortCut = 49236
+      OnExecute = SortExecute
+    end
+    object actOpenFolder: TAction
+      Caption = 'Open containing &folder'
+      ShortCut = 49222
+      OnExecute = actOpenFolderExecute
+    end
+    object actOpenProperties: TAction
+      Caption = '&Properties'
+      ShortCut = 49165
+      OnExecute = actOpenPropertiesExecute
+    end
+    object actMRUNext: TAction
+      Caption = 'actMRUNext'
+      ShortCut = 16422
+      OnExecute = actMRUNextExecute
+    end
+    object actMRUPrior: TAction
+      Caption = 'actMRUPrior'
+      ShortCut = 16424
+      OnExecute = actMRUPriorExecute
+    end
+  end
+  object pmnUnits: TPopupMenu
+    Left = 64
+    Top = 32
+    object pmnUnitsSelectAll: TMenuItem
+      Action = actSelectAll
+    end
+    object pmnUnitsSelectInvert: TMenuItem
+      Action = actSelectInvert
+    end
+    object pmnUnitsSep1: TMenuItem
+      Caption = '-'
+    end
+    object pmnUnitsSortByName: TMenuItem
+      Action = actSortByName
+    end
+    object pmnUnitsSortByType: TMenuItem
+      Action = actSortByType
+    end
+    object pmnUnitsSep2: TMenuItem
+      Caption = '-'
+    end
+    object pmnUnitsOpenFolder: TMenuItem
+      Action = actOpenFolder
+    end
+    object pmnUnitsOpenProperties: TMenuItem
+      Action = actOpenProperties
     end
   end
 end

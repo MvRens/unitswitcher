@@ -8,6 +8,7 @@ unit UnSwSettings;
 
 interface
 uses
+  Classes,
   Graphics,
   Registry;
 
@@ -28,6 +29,8 @@ type
     procedure WriteColor(const ARegistry: TRegistry; const AValue: TColor; const AName: String);
   end;
 
+  TUnSwDialogSort     = (dsName, dsType);
+
   TUnSwDialogSettings = class(TUnSwBaseSettings)
   private
     FHeight:                Integer;
@@ -35,7 +38,9 @@ type
     FIncludeForms:          Boolean;
     FIncludeProjectSource:  Boolean;
     FIncludeUnits:          Boolean;
+    FMRUList:               TStrings;
     FPrefix:                String;
+    FSort:                  TUnSwDialogSort;
     FWidth:                 Integer;
   protected
     function GetKeyName(const AName: String): String; override;
@@ -43,12 +48,15 @@ type
     procedure Save(const ARegistry: TRegistry); override;
   public
     constructor Create(const APrefix: String);
+    destructor Destroy(); override;
 
     property Height:                Integer             read FHeight                write FHeight;
     property IncludeDataModules:    Boolean             read FIncludeDataModules    write FIncludeDataModules;
     property IncludeForms:          Boolean             read FIncludeForms          write FIncludeForms;
     property IncludeProjectSource:  Boolean             read FIncludeProjectSource  write FIncludeProjectSource;
     property IncludeUnits:          Boolean             read FIncludeUnits          write FIncludeUnits;
+    property MRUList:               TStrings            read FMRUList               write FMRUList;
+    property Sort:                  TUnSwDialogSort     read FSort                  write FSort;
     property Width:                 Integer             read FWidth                 write FWidth;
   end;
 
@@ -170,7 +178,17 @@ constructor TUnSwDialogSettings.Create(const APrefix: String);
 begin
   inherited Create();
 
-  FPrefix := APrefix;
+  FMRUList  := TStringList.Create();
+  FPrefix   := APrefix;
+
+  TStringList(FMRUList).CaseSensitive := False
+end;
+
+destructor TUnSwDialogSettings.Destroy();
+begin
+  FreeAndNil(FMRUList);
+   
+  inherited;
 end;
 
 
@@ -180,6 +198,11 @@ begin
 end;
 
 procedure TUnSwDialogSettings.Load(const ARegistry: TRegistry);
+var
+  eSort:      TUnSwDialogSort;
+  iSort:      Integer absolute eSort;
+  sMRU:       String;
+
 begin
   // Conversion v0.1 -> v0.2
   if ARegistry.ValueExists('IncludeDataModules') then
@@ -202,17 +225,44 @@ begin
 
   ReadIntegerDef(ARegistry, FWidth,   'Width');
   ReadIntegerDef(ARegistry, FHeight,  'Height');
+
+  // The 'absolute' acts as an implicit typecast 
+  eSort := FSort;
+  ReadIntegerDef(ARegistry, iSort,    'Sort');
+  FSort := eSort;
+
+  if ARegistry.ValueExists('MRU') then
+  begin
+    SetLength(sMRU, ARegistry.GetDataSize('MRU'));
+    if Length(sMRU) > 0 then
+    begin
+      ARegistry.ReadBinaryData('MRU', PChar(sMRU)^, Length(sMRU));
+      FMRUList.Text := sMRU;
+    end;
+  end;
 end;
 
 procedure TUnSwDialogSettings.Save(const ARegistry: TRegistry);
+var
+  sMRU:       String;
+
 begin
   WriteBool(ARegistry,    FIncludeDataModules,    'IncludeDataModules');
   WriteBool(ARegistry,    FIncludeForms,          'IncludeForms');
   WriteBool(ARegistry,    FIncludeProjectSource,  'IncludeProjectSource');
   WriteBool(ARegistry,    FIncludeUnits,          'IncludeUnits');
 
-  WriteInteger(ARegistry, FWidth,   'Width');
-  WriteInteger(ARegistry, FHeight,  'Height');
+  WriteInteger(ARegistry, FWidth,         'Width');
+  WriteInteger(ARegistry, FHeight,        'Height');
+
+  WriteInteger(ARegistry, Integer(FSort), 'Sort');
+
+  if FMRUList.Count > 0 then
+  begin
+    sMRU  := FMRUList.Text;
+    ARegistry.WriteBinaryData('MRU', PChar(sMRU)^, Length(sMRU));
+  end else
+    ARegistry.DeleteValue('MRU');
 end;
 
 
@@ -267,6 +317,7 @@ procedure TUnSwSettings.ResetDefaults();
     ADialog.IncludeForms          := True;
     ADialog.IncludeProjectSource  := True;
     ADialog.IncludeUnits          := True;
+    ADialog.Sort                  := dsName;
     ADialog.Width                 := 300;
     ADialog.Height                := 425;
   end;

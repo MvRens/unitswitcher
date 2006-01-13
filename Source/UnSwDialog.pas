@@ -16,6 +16,7 @@ uses
   Forms,
   Graphics,
   ImgList,
+  Menus,
   StdCtrls,
   Windows,
 
@@ -36,38 +37,65 @@ type
   end;
 
   TfrmUnSwDialog = class(TForm)
+    actMRUNext:                                 TAction;
+    actMRUPrior:                                TAction;
+    actOpenFolder:                              TAction;
+    actOpenProperties:                          TAction;
+    actSelectAll:                               TAction;
+    actSelectInvert:                            TAction;
+    actSortByName:                              TAction;
+    actSortByType:                              TAction;
+    alMain:                                     TActionList;
     btnCancel:                                  TButton;
     btnConfiguration:                           TButton;
     btnOK:                                      TButton;
     chkDataModules:                             TCheckBox;
     chkForms:                                   TCheckBox;
     chkProjectSource:                           TCheckBox;
+    chkUnits:                                   TCheckBox;
     edtSearch:                                  TEdit;
     ilsTypes:                                   TImageList;
     lstUnits:                                   TListBox;
+    pmnUnits:                                   TPopupMenu;
+    pmnUnitsOpenFolder:                         TMenuItem;
+    pmnUnitsOpenProperties:                     TMenuItem;
+    pmnUnitsSelectAll:                          TMenuItem;
+    pmnUnitsSelectInvert:                       TMenuItem;
+    pmnUnitsSep1:                               TMenuItem;
+    pmnUnitsSep2:                               TMenuItem;
+    pmnUnitsSortByName:                         TMenuItem;
+    pmnUnitsSortByType:                         TMenuItem;
     pnlButtons:                                 TPanel;
+    pnlIncludeFormTypes:                        TPanel;
     pnlIncludeTypes:                            TPanel;
+    pnlIncludeUnitTypes:                        TPanel;
     pnlMain:                                    TPanel;
     pnlSearch:                                  TPanel;
     sbStatus:                                   TStatusBar;
-    alMain: TActionList;
-    actSelectAll: TAction;
-    procedure FormShow(Sender: TObject);
-    procedure actSelectAllExecute(Sender: TObject);
 
-    procedure FormResize(Sender: TObject);
+    procedure actMRUNextExecute(Sender: TObject);
+    procedure actMRUPriorExecute(Sender: TObject);
+    procedure actOpenFolderExecute(Sender: TObject);
+    procedure actOpenPropertiesExecute(Sender: TObject);
+    procedure actSelectAllExecute(Sender: TObject);
+    procedure actSelectInvertExecute(Sender: TObject);
     procedure btnConfigurationClick(Sender: TObject);
     procedure edtSearchChange(Sender: TObject);
     procedure edtSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure TypeFilterChange(Sender: TObject);
-    procedure lstUnitsDblClick(Sender: TObject);
+    procedure FormResize(Sender: TObject);
+    procedure FormShow(Sender: TObject);
     procedure lstUnitsData(Control: TWinControl; Index: Integer; var Data: string);
+    procedure lstUnitsDblClick(Sender: TObject);
     procedure lstUnitsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+    procedure SortExecute(Sender: TObject);
+    procedure TypeFilterChange(Sender: TObject);
   private
     FLoading:               Boolean;
     FUnitList:              TUnSwUnitList;
     FActiveUnit:            TUnSwUnit;
     FFormsOnly:             Boolean;
+    FMRUIndex:              Integer;
+    FMRUList:               TStrings;
 
     FTypeFilteredList:      TUnSwUnitList;
     FInputFilteredList:     TUnSwUnitList;
@@ -82,6 +110,7 @@ type
     procedure UpdateList();
 
     function GetActiveUnits(): TUnSwUnitList;
+    procedure SelectMRUItem();
 
     procedure LoadSettings();
     procedure SaveSettings();
@@ -94,13 +123,118 @@ type
 implementation
 uses
   Messages,
+  ShellAPI,
   SysUtils,
 
   UnSwConfiguration,
   UnSwSettings;
 
+type
+  TUnSwOpenVisitor            = class(TInterfacedObject, IUnSwVisitor)
+  private
+    FProcessed:     TStringList;
+  protected
+    function IsProcessed(const AFileName: String; const ARegister: Boolean = True): Boolean;
+    procedure OpenFile(const AFileName: String); virtual; abstract;
+
+    procedure VisitModule(const AUnit: TUnSwModuleUnit);
+    procedure VisitProject(const AUnit: TUnSwProjectUnit);
+  public
+    constructor Create();
+    destructor Destroy(); override;
+  end;
+
+  TUnSwOpenFolderVisitor      = class(TUnSwOpenVisitor)
+  protected
+    procedure OpenFile(const AFileName: String); override;
+  end;
+
+  TUnSwOpenPropertiesVisitor  = class(TUnSwOpenVisitor)
+  protected
+    procedure OpenFile(const AFileName: String); override;
+  end;
+
 
 {$R *.dfm}
+
+
+{ TUnSwOpenVisitor }
+constructor TUnSwOpenVisitor.Create();
+begin
+  inherited Create();
+
+  FProcessed                := TStringList.Create();
+  FProcessed.CaseSensitive  := False;
+end;
+
+destructor TUnSwOpenVisitor.Destroy();
+begin
+  FreeAndNil(FProcessed);
+
+  inherited;
+end;
+
+function TUnSwOpenVisitor.IsProcessed(const AFileName: String;
+                                      const ARegister: Boolean): Boolean;
+begin
+  Result  := (FProcessed.IndexOf(AFileName) > -1);
+  if (not Result) and ARegister then
+    FProcessed.Add(AFileName);
+end;
+
+procedure TUnSwOpenVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
+begin
+  OpenFile(AUnit.FileName);
+end;
+
+procedure TUnSwOpenVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
+begin
+  OpenFile(AUnit.FileName);
+end;
+
+
+{ TUnSwOpenFolderVisitor }
+procedure TUnSwOpenFolderVisitor.OpenFile(const AFileName: String);
+var
+  sFile:        String;
+  sPath:        String;
+  sParams:      String;
+
+begin
+  sFile := ExpandFileName(AFileName);
+  sPath := ExtractFilePath(sFile);
+  if not IsProcessed(sPath) then
+  begin
+    sParams := '/e,';
+
+    // If it's a file, have explorer highlight it
+    if not DirectoryExists(AFileName) then
+      sParams := sParams + '/select,';
+
+    sParams := sParams + ExtractShortPathName(sFile);
+    ShellExecute(0, 'open', 'explorer.exe', PChar(sParams), nil, SW_SHOWNORMAL);
+  end;
+end;
+
+
+{ TUnSwOpenPropertiesVisitor }
+procedure TUnSwOpenPropertiesVisitor.OpenFile(const AFileName: String);
+var
+  pInfo:        TShellExecuteInfo;
+
+begin
+  if not IsProcessed(AFileName) then
+  begin
+    // Regular ShellExecute doesn't work
+    FillChar(pInfo, SizeOf(pInfo), #0);
+    pInfo.cbSize  := SizeOf(TShellExecuteInfo);
+    pInfo.lpFile  := PChar(AFileName);
+    pInfo.nShow   := SW_SHOWNORMAL;
+    pInfo.fMask   := SEE_MASK_INVOKEIDLIST;
+    pInfo.lpVerb  := 'properties';
+    ShellExecuteEx(@pInfo);
+  end;
+end;
 
 
 { TUnSwStyleVisitor }
@@ -162,12 +296,10 @@ begin
   UpdateTypeFilter();
 end;
 
-function SortByName(Item1, Item2: Pointer): Integer;
-begin
-  Result  := CompareText(TUnSwUnit(Item1).Name, TUnSwUnit(Item2).Name)
-end;
-
 function TfrmUnSwDialog.InternalExecute(): TUnSwUnitList;
+var
+  iIndex:       Integer;
+
 begin
   Result              := nil;
   FTypeFilteredList   := TUnSwUnitList.Create();
@@ -183,15 +315,25 @@ begin
 
     if FFormsOnly then
     begin
-      pnlIncludeTypes.Visible   := False;
-      Self.Caption              := 'UnitSwitcher - View Form';
+      pnlIncludeUnitTypes.Visible := False;
+      Self.Caption                := 'UnitSwitcher - View Form';
     end else
-      Self.Caption              := 'UnitSwitcher - View Unit';
+      Self.Caption                := 'UnitSwitcher - View Unit';
 
     FStyleVisitor := TUnSwStyleVisitor.Create();
     try
       if Self.ShowModal() = mrOk then
+      begin
+        iIndex  := FMRUList.IndexOf(edtSearch.Text);
+        if iIndex > -1 then
+          FMRUList.Delete(iIndex);
+
+        while FMRUList.Count >= 10 do
+          FMRUList.Delete(Pred(FMRUList.Count));
+
+        FMRUList.Insert(0, edtSearch.Text);
         Result  := GetActiveUnits();
+      end;
 
       SaveSettings();
     finally
@@ -234,21 +376,81 @@ begin
       end;
     finally
       FreeAndNil(activeUnits);
-    end else
+    end;
+
+    if lstUnits.SelCount = 0 then
       lstUnits.Selected[0]  := True;
   end;
 end;
 
+function SortByName(Item1, Item2: Pointer): Integer;
+begin
+  Result  := CompareText(TUnSwUnit(Item1).Name, TUnSwUnit(Item2).Name)
+end;
+
+function SortByType(Item1, Item2: Pointer): Integer;
+const
+  Above = -1;
+  Equal = 0;
+  Below = 1;
+
+  function SortByModuleType(Item1, Item2: TUnSwUnitType): Integer;
+  begin
+    Result  := Equal;
+    if Item1 <> Item2 then
+      case Item1 of
+        swutForm:
+          case Item2 of
+            swutDataModule:   Result  := Below;
+            swutUnit:         Result  := Above;
+          end;
+        swutDataModule:       Result  := Above;
+        swutUnit:             Result  := Below;
+      end;
+  end;
+
+var
+  pItem1:     TUnSwUnit;
+  pItem2:     TUnSwUnit;
+
+begin
+  // #ToDo3 Refactor SortByType
+
+  // The following order is assumed:
+  //    Project source, DataModules, Forms, Units
+  Result  := Equal;
+  pItem1  := TUnSwUnit(Item1);
+  pItem2  := TUnSwUnit(Item2);
+
+  if pItem1.ClassType <> pItem2.ClassType then
+  begin
+    if pItem1 is TUnSwProjectUnit then
+      Result  := Above
+    else if pItem2 is TUnSwProjectUnit then
+      Result  := Below;
+  end else if pItem1 is TUnSwModuleUnit then
+    Result  := SortByModuleType(TUnSwModuleUnit(pItem1).UnitType,
+                                TUnSwModuleUnit(pItem2).UnitType);
+
+  if Result = Equal then
+    Result  := SortByName(Item1, Item2);
+end;
+
 procedure TfrmUnSwDialog.UpdateTypeFilter();
 begin
-  FTypeFilter.IncludeUnits          := not FFormsOnly;
-  FTypeFilter.IncludeForms          := (FFormsOnly or chkForms.Checked);
-  FTypeFilter.IncludeDataModules    := (FFormsOnly or chkDataModules.Checked);
+  FTypeFilter.IncludeUnits          := ((not FFormsOnly) and chkUnits.Checked);
   FTypeFilter.IncludeProjectSource  := ((not FFormsOnly) and chkProjectSource.Checked);
+  FTypeFilter.IncludeForms          := chkForms.Checked;
+  FTypeFilter.IncludeDataModules    := chkDataModules.Checked;
 
   FTypeFilteredList.Clone(FUnitList);
   FTypeFilteredList.AcceptVisitor(FTypeFilter);
-  FTypeFilteredList.Sort(SortByName);
+
+  if actSortByName.Checked then
+    FTypeFilteredList.Sort(SortByName)
+  else
+    FTypeFilteredList.Sort(SortByType);
+
   UpdateList();
 end;
 
@@ -290,7 +492,16 @@ begin
   try
     chkDataModules.Checked    := dialogSettings.IncludeDataModules;
     chkForms.Checked          := dialogSettings.IncludeForms;
+    chkUnits.Checked          := dialogSettings.IncludeUnits;
     chkProjectSource.Checked  := dialogSettings.IncludeProjectSource;
+
+    case dialogSettings.Sort of
+      dsName: actSortByName.Checked := True;
+      dsType: actSortByType.Checked := True;
+    end;
+
+    FMRUList                  := dialogSettings.MRUList;
+    FMRUIndex                 := -1;
 
     Self.ClientWidth          := dialogSettings.Width;
     Self.ClientHeight         := dialogSettings.Height;
@@ -311,7 +522,13 @@ begin
 
   dialogSettings.IncludeDataModules   := chkForms.Checked;
   dialogSettings.IncludeForms         := chkDataModules.Checked;
+  dialogSettings.IncludeUnits         := chkUnits.Checked;
   dialogSettings.IncludeProjectSource := chkProjectSource.Checked;
+
+  if actSortByName.Checked then
+    dialogSettings.Sort               := dsName
+  else
+    dialogSettings.Sort               := dsType;
 
   dialogSettings.Width                := Self.ClientWidth;
   dialogSettings.Height               := Self.ClientHeight;
@@ -324,6 +541,81 @@ procedure TfrmUnSwDialog.actSelectAllExecute(Sender: TObject);
 begin
   lstUnits.SelectAll();
 end;
+
+procedure TfrmUnSwDialog.actSelectInvertExecute(Sender: TObject);
+var
+  iItem:      Integer;
+
+begin
+  for iItem := Pred(lstUnits.Count) downto 0 do
+    lstUnits.Selected[iItem]  := not lstUnits.Selected[iItem];
+end;
+
+procedure TfrmUnSwDialog.SortExecute(Sender: TObject);
+begin
+  (Sender as TAction).Checked := True;
+  UpdateTypeFilter();
+end;
+
+
+procedure TfrmUnSwDialog.SelectMRUItem();
+begin
+  if (FMRUIndex < -1) or (FMRUIndex > Pred(FMRUList.Count)) then
+    exit;
+
+  if FMRUIndex = -1 then
+    edtSearch.Text  := ''
+  else
+    edtSearch.Text  := FMRUList[FMRUIndex];
+
+  ActiveControl   := edtSearch;
+  edtSearch.SelectAll();
+end;
+
+procedure TfrmUnSwDialog.actMRUNextExecute(Sender: TObject);
+begin
+  if FMRUIndex < Pred(FMRUList.Count) then
+    Inc(FMRUIndex);
+
+  SelectMRUItem();
+end;
+
+procedure TfrmUnSwDialog.actMRUPriorExecute(Sender: TObject);
+begin
+  if FMRUIndex >= -1 then
+    Dec(FMRUIndex);
+
+  SelectMRUItem();
+end;
+
+procedure TfrmUnSwDialog.actOpenFolderExecute(Sender: TObject);
+var
+  pUnits:     TUnSwUnitList;
+
+begin
+  pUnits  := GetActiveUnits();
+  if Assigned(pUnits) then
+  try
+    pUnits.AcceptVisitor(TUnSwOpenFolderVisitor.Create());
+  finally
+    FreeAndNil(pUnits);
+  end;
+end;
+
+procedure TfrmUnSwDialog.actOpenPropertiesExecute(Sender: TObject);
+var
+  pUnits:     TUnSwUnitList;
+
+begin
+  pUnits  := GetActiveUnits();
+  if Assigned(pUnits) then
+  try
+    pUnits.AcceptVisitor(TUnSwOpenPropertiesVisitor.Create());
+  finally
+    FreeAndNil(pUnits);
+  end;
+end;
+
 
 procedure TfrmUnSwDialog.btnConfigurationClick(Sender: TObject);
 begin
@@ -341,7 +633,7 @@ procedure TfrmUnSwDialog.edtSearchKeyDown(Sender: TObject; var Key: Word;
                                           Shift: TShiftState);
 begin
   if ((Shift = []) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) or
-     ((Shift = [ssCtrl]) and (Key in [VK_UP, VK_DOWN, VK_HOME, VK_END])) or
+     ((Shift = [ssCtrl]) and (Key in [VK_HOME, VK_END])) or
      ((Shift = [ssShift]) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) then
     lstUnits.Perform(WM_KEYDOWN, Key, 0);
 end;
