@@ -66,9 +66,7 @@ type
     pmnUnitsSortByName:                         TMenuItem;
     pmnUnitsSortByType:                         TMenuItem;
     pnlButtons:                                 TPanel;
-    pnlIncludeFormTypes:                        TPanel;
     pnlIncludeTypes:                            TPanel;
-    pnlIncludeUnitTypes:                        TPanel;
     pnlMain:                                    TPanel;
     pnlSearch:                                  TPanel;
     sbStatus:                                   TStatusBar;
@@ -315,10 +313,11 @@ begin
 
     if FFormsOnly then
     begin
-      pnlIncludeUnitTypes.Visible := False;
-      Self.Caption                := 'UnitSwitcher - View Form';
+      chkProjectSource.Visible  := False;
+      chkUnits.Visible          := False;
+      Self.Caption              := 'UnitSwitcher - View Form';
     end else
-      Self.Caption                := 'UnitSwitcher - View Unit';
+      Self.Caption              := 'UnitSwitcher - View Unit';
 
     FStyleVisitor := TUnSwStyleVisitor.Create();
     try
