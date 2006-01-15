@@ -51,7 +51,7 @@ object frmUnSwDialog: TfrmUnSwDialog
     TabOrder = 0
     object pnlSearch: TPanel
       Left = 4
-      Top = 4
+      Top = 24
       Width = 304
       Height = 25
       Align = alTop
@@ -60,22 +60,24 @@ object frmUnSwDialog: TfrmUnSwDialog
       DesignSize = (
         304
         25)
-      object edtSearch: TEdit
+      object cmbSearch: TComboBox
         Left = 0
         Top = 0
         Width = 304
         Height = 21
         Anchors = [akLeft, akTop, akRight]
+        ItemHeight = 13
         TabOrder = 0
-        OnChange = edtSearchChange
-        OnKeyDown = edtSearchKeyDown
+        OnChange = cmbSearchChange
+        OnKeyDown = cmbSearchKeyDown
+        OnKeyPress = cmbSearchKeyPress
       end
     end
     object lstUnits: TListBox
       Left = 4
-      Top = 29
+      Top = 49
       Width = 304
-      Height = 274
+      Height = 254
       Style = lbVirtualOwnerDraw
       Align = alClient
       ItemHeight = 20
@@ -85,6 +87,28 @@ object frmUnSwDialog: TfrmUnSwDialog
       OnData = lstUnitsData
       OnDblClick = lstUnitsDblClick
       OnDrawItem = lstUnitsDrawItem
+    end
+    object pnlSubFilters: TPanel
+      Left = 4
+      Top = 4
+      Width = 304
+      Height = 20
+      Align = alTop
+      BevelOuter = bvNone
+      TabOrder = 2
+      Visible = False
+      DesignSize = (
+        304
+        20)
+      object lblSubFilters: TLabel
+        Left = 0
+        Top = 1
+        Width = 305
+        Height = 13
+        Anchors = [akLeft, akTop, akRight]
+        AutoSize = False
+        Caption = 'frm '#187' Dialog '#187
+      end
     end
   end
   object pnlButtons: TPanel
@@ -176,8 +200,8 @@ object frmUnSwDialog: TfrmUnSwDialog
     end
   end
   object ilsTypes: TImageList
-    Left = 8
-    Top = 32
+    Left = 16
+    Top = 264
     Bitmap = {
       494C010105000900040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
@@ -583,8 +607,8 @@ object frmUnSwDialog: TfrmUnSwDialog
       000000000000}
   end
   object alMain: TActionList
-    Left = 36
-    Top = 32
+    Left = 44
+    Top = 264
     object actSelectAll: TAction
       Caption = 'Select &All'
       ShortCut = 16449
@@ -617,20 +641,20 @@ object frmUnSwDialog: TfrmUnSwDialog
       ShortCut = 49165
       OnExecute = actOpenPropertiesExecute
     end
-    object actMRUNext: TAction
-      Caption = 'actMRUNext'
-      ShortCut = 16422
-      OnExecute = actMRUNextExecute
-    end
     object actMRUPrior: TAction
       Caption = 'actMRUPrior'
-      ShortCut = 16424
+      ShortCut = 16422
       OnExecute = actMRUPriorExecute
+    end
+    object actMRUNext: TAction
+      Caption = 'actMRUNext'
+      ShortCut = 16424
+      OnExecute = actMRUNextExecute
     end
   end
   object pmnUnits: TPopupMenu
-    Left = 64
-    Top = 32
+    Left = 72
+    Top = 264
     object pmnUnitsSelectAll: TMenuItem
       Action = actSelectAll
     end

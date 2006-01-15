@@ -53,8 +53,9 @@ type
     chkForms:                                   TCheckBox;
     chkProjectSource:                           TCheckBox;
     chkUnits:                                   TCheckBox;
-    edtSearch:                                  TEdit;
+    cmbSearch:                                  TComboBox;
     ilsTypes:                                   TImageList;
+    lblSubFilters:                              TLabel;
     lstUnits:                                   TListBox;
     pmnUnits:                                   TPopupMenu;
     pmnUnitsOpenFolder:                         TMenuItem;
@@ -69,7 +70,9 @@ type
     pnlIncludeTypes:                            TPanel;
     pnlMain:                                    TPanel;
     pnlSearch:                                  TPanel;
+    pnlSubFilters:                              TPanel;
     sbStatus:                                   TStatusBar;
+    procedure cmbSearchKeyPress(Sender: TObject; var Key: Char);
 
     procedure actMRUNextExecute(Sender: TObject);
     procedure actMRUPriorExecute(Sender: TObject);
@@ -78,8 +81,8 @@ type
     procedure actSelectAllExecute(Sender: TObject);
     procedure actSelectInvertExecute(Sender: TObject);
     procedure btnConfigurationClick(Sender: TObject);
-    procedure edtSearchChange(Sender: TObject);
-    procedure edtSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure cmbSearchChange(Sender: TObject);
+    procedure cmbSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure lstUnitsData(Control: TWinControl; Index: Integer; var Data: string);
@@ -92,13 +95,16 @@ type
     FUnitList:              TUnSwUnitList;
     FActiveUnit:            TUnSwUnit;
     FFormsOnly:             Boolean;
-    FMRUIndex:              Integer;
     FMRUList:               TStrings;
+    FMRUIndex:              Integer;
+    FSubFilters:            TStringList;
 
     FTypeFilteredList:      TUnSwUnitList;
+    FSubFilteredList:       TUnSwUnitList;
     FInputFilteredList:     TUnSwUnitList;
 
     FTypeFilter:            TUnSwUnitTypeFilter;
+    FSubFilter:             TUnSwUnitSimpleFilter;
     FInputFilter:           TUnSwUnitSimpleFilter;
 
     FStyleVisitor:          TUnSwStyleVisitor;
@@ -109,6 +115,10 @@ type
 
     function GetActiveUnits(): TUnSwUnitList;
     procedure SelectMRUItem();
+
+    function PushFilter(const AFilter: String): Boolean;
+    procedure PopFilter();
+    procedure UpdateSubFilters();
 
     procedure LoadSettings();
     procedure SaveSettings();
@@ -125,7 +135,7 @@ uses
   SysUtils,
 
   UnSwConfiguration,
-  UnSwSettings;
+  UnSwSettings, Dialogs;
 
 type
   TUnSwOpenVisitor            = class(TInterfacedObject, IUnSwVisitor)
@@ -295,19 +305,29 @@ begin
 end;
 
 function TfrmUnSwDialog.InternalExecute(): TUnSwUnitList;
+type
+  TUnSwUnitSimpleFilterClass  = class of TUnSwUnitSimpleFilter;
+  
 var
   iIndex:       Integer;
+  pClass:       TUnSwUnitSimpleFilterClass;
 
 begin
   Result              := nil;
+  FSubFilters         := TStringList.Create();
   FTypeFilteredList   := TUnSwUnitList.Create();
+  FSubFilteredList    := TUnSwUnitList.Create();
   FInputFilteredList  := TUnSwUnitList.Create();
   FTypeFilter         := TUnSwUnitTypeFilter.Create(FTypeFilteredList);
 
   if FFormsOnly then
-    FInputFilter      := TUnSwUnitSimpleFormNameFilter.Create(FInputFilteredList)
+    pClass            := TUnSwUnitSimpleFormNameFilter
   else
-    FInputFilter      := TUnSwUnitSimpleNameFilter.Create(FInputFilteredList);
+    pClass            := TUnSwUnitSimpleNameFilter;
+
+  FSubFilter          := pClass.Create(FSubFilteredList);
+  FInputFilter        := pClass.Create(FInputFilteredList);
+
   try
     LoadSettings();
 
@@ -323,14 +343,18 @@ begin
     try
       if Self.ShowModal() = mrOk then
       begin
-        iIndex  := FMRUList.IndexOf(edtSearch.Text);
-        if iIndex > -1 then
-          FMRUList.Delete(iIndex);
+        if Length(Trim(cmbSearch.Text)) > 0 then
+        begin
+          iIndex  := FMRUList.IndexOf(cmbSearch.Text);
+          if iIndex > -1 then
+            FMRUList.Delete(iIndex);
 
-        while FMRUList.Count >= 10 do
-          FMRUList.Delete(Pred(FMRUList.Count));
+          while FMRUList.Count >= 10 do
+            FMRUList.Delete(Pred(FMRUList.Count));
 
-        FMRUList.Insert(0, edtSearch.Text);
+          FMRUList.Insert(0, cmbSearch.Text);
+        end;
+        
         Result  := GetActiveUnits();
       end;
 
@@ -340,9 +364,12 @@ begin
     end;
   finally
     FreeAndNil(FInputFilter);
+    FreeAndNil(FSubFilter); 
     FreeAndNil(FTypeFilter);
+    FreeAndNil(FSubFilteredList);
     FreeAndNil(FInputFilteredList);
     FreeAndNil(FTypeFilteredList);
+    FreeAndNil(FSubFilters);
   end;
 end;
 
@@ -356,7 +383,7 @@ var
 begin
   activeUnits := GetActiveUnits();
 
-  FInputFilteredList.Clone(FTypeFilteredList);
+  FInputFilteredList.Clone(FSubFilteredList);
   FInputFilteredList.AcceptVisitor(FInputFilter);
 
   lstUnits.Count  := FInputFilteredList.Count;
@@ -450,7 +477,56 @@ begin
   else
     FTypeFilteredList.Sort(SortByType);
 
+  UpdateSubFilters();
+end;
+
+procedure TfrmUnSwDialog.PopFilter();
+begin
+  if FSubFilters.Count > 0 then
+  begin
+    FSubFilters.Delete(Pred(FSubFilters.Count));
+    UpdateSubFilters();
+  end;
+end;
+
+procedure TfrmUnSwDialog.UpdateSubFilters();
+var
+  iFilter:        Integer;
+  sFilters:       String;
+
+begin
+  FSubFilteredList.Clone(FTypeFilteredList);
+
+  if FSubFilters.Count > 0 then
+  begin
+    for iFilter := 0 to Pred(FSubFilters.Count) do
+    begin
+      sFilters          := sFilters + FSubFilters[iFilter] + ' '#187' ';
+      FSubFilter.Filter := FSubFilters[iFilter];
+      FSubFilteredList.AcceptVisitor(FSubFilter);
+    end;
+
+    lblSubFilters.Caption := Trim(sFilters);
+    pnlSubFilters.Visible := True;
+  end else
+    pnlSubFilters.Visible := False;
+
   UpdateList();
+end;
+
+
+function TfrmUnSwDialog.PushFilter(const AFilter: String): Boolean;
+var
+  sFilter:      String;
+
+begin
+  sFilter := Trim(AFilter);  
+  Result  := (Length(sFilter) > 0) and (FSubFilters.IndexOf(AFilter) = -1);
+  if Result then
+  begin
+    FSubFilters.Add(AFilter);
+    UpdateSubFilters();
+  end;
 end;
 
 function TfrmUnSwDialog.GetActiveUnits(): TUnSwUnitList;
@@ -500,7 +576,7 @@ begin
     end;
 
     FMRUList                  := dialogSettings.MRUList;
-    FMRUIndex                 := -1;
+    cmbSearch.Items.Assign(FMRUList);
 
     Self.ClientWidth          := dialogSettings.Width;
     Self.ClientHeight         := dialogSettings.Height;
@@ -559,16 +635,9 @@ end;
 
 procedure TfrmUnSwDialog.SelectMRUItem();
 begin
-  if (FMRUIndex < -1) or (FMRUIndex > Pred(FMRUList.Count)) then
-    exit;
-
-  if FMRUIndex = -1 then
-    edtSearch.Text  := ''
-  else
-    edtSearch.Text  := FMRUList[FMRUIndex];
-
-  ActiveControl   := edtSearch;
-  edtSearch.SelectAll();
+  cmbSearch.ItemIndex := FMRUIndex;
+  ActiveControl       := cmbSearch;
+  cmbSearch.SelectAll();
 end;
 
 procedure TfrmUnSwDialog.actMRUNextExecute(Sender: TObject);
@@ -622,19 +691,46 @@ begin
     lstUnits.Invalidate();
 end;
 
-procedure TfrmUnSwDialog.edtSearchChange(Sender: TObject);
+procedure TfrmUnSwDialog.cmbSearchChange(Sender: TObject);
 begin
-  FInputFilter.Filter := edtSearch.Text;
+  FInputFilter.Filter := cmbSearch.Text;
   UpdateList();
 end;
 
-procedure TfrmUnSwDialog.edtSearchKeyDown(Sender: TObject; var Key: Word;
+procedure TfrmUnSwDialog.cmbSearchKeyDown(Sender: TObject; var Key: Word;
                                           Shift: TShiftState);
 begin
-  if ((Shift = []) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) or
-     ((Shift = [ssCtrl]) and (Key in [VK_HOME, VK_END])) or
-     ((Shift = [ssShift]) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) then
-    lstUnits.Perform(WM_KEYDOWN, Key, 0);
+  if not cmbSearch.DroppedDown then
+    if ((Shift = []) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) or
+       ((Shift = [ssCtrl]) and (Key in [VK_HOME, VK_END])) or
+       ((Shift = [ssShift]) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) then
+    begin
+      lstUnits.Perform(WM_KEYDOWN, Key, 0);
+      Key := 0;
+    end else if Shift = [ssCtrl] then
+      case Key of
+        VK_TAB:
+          begin
+            if PushFilter(cmbSearch.Text) then
+              cmbSearch.Text  := '';
+
+            Key := 0;
+          end;
+        VK_BACK:
+          begin
+            cmbSearch.Text      := '';
+            FInputFilter.Filter := '';
+            PopFilter();
+            Key := 0;
+          end;
+      end;
+end;
+
+procedure TfrmUnSwDialog.cmbSearchKeyPress(Sender: TObject; var Key: Char);
+begin
+  // Ctrl-Backspace
+  if Key = #127 then
+    Key := #0;
 end;
 
 procedure TfrmUnSwDialog.TypeFilterChange(Sender: TObject);

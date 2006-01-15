@@ -91,7 +91,7 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    procedure ResetDefaults();
+    procedure ResetDefaults(const AColorsOnly: Boolean = False);
     procedure Save();
 
     property Colors:          TUnSwColorSettings  read FColors      write FColors;
@@ -199,8 +199,7 @@ end;
 
 procedure TUnSwDialogSettings.Load(const ARegistry: TRegistry);
 var
-  eSort:      TUnSwDialogSort;
-  iSort:      Integer absolute eSort;
+  iSort:      Integer;
   sMRU:       String;
 
 begin
@@ -226,18 +225,17 @@ begin
   ReadIntegerDef(ARegistry, FWidth,   'Width');
   ReadIntegerDef(ARegistry, FHeight,  'Height');
 
-  // The 'absolute' acts as an implicit typecast 
-  eSort := FSort;
+  iSort := Integer(FSort);
   ReadIntegerDef(ARegistry, iSort,    'Sort');
-  FSort := eSort;
+  FSort := TUnSwDialogSort(iSort);
 
-  if ARegistry.ValueExists('MRU') then
+  if ARegistry.ValueExists(GetKeyName('MRU')) then
   begin
-    SetLength(sMRU, ARegistry.GetDataSize('MRU'));
+    SetLength(sMRU, ARegistry.GetDataSize(GetKeyName('MRU')));
     if Length(sMRU) > 0 then
     begin
-      ARegistry.ReadBinaryData('MRU', PChar(sMRU)^, Length(sMRU));
-      FMRUList.Text := sMRU;
+      ARegistry.ReadBinaryData(GetKeyName('MRU'), PChar(sMRU)^, Length(sMRU));
+      FMRUList.Text := Trim(sMRU);
     end;
   end;
 end;
@@ -260,9 +258,9 @@ begin
   if FMRUList.Count > 0 then
   begin
     sMRU  := FMRUList.Text;
-    ARegistry.WriteBinaryData('MRU', PChar(sMRU)^, Length(sMRU));
+    ARegistry.WriteBinaryData(GetKeyName('MRU'), PChar(sMRU)^, Length(sMRU));
   end else
-    ARegistry.DeleteValue('MRU');
+    ARegistry.DeleteValue(GetKeyName('MRU'));
 end;
 
 
@@ -298,6 +296,7 @@ begin
   FFormsDialog  := TUnSwDialogSettings.Create('Forms');
   FUnitsDialog  := TUnSwDialogSettings.Create('Units');
   ResetDefaults();
+  Load();
 end;
 
 destructor TUnSwSettings.Destroy();
@@ -310,7 +309,7 @@ begin
 end;
 
 
-procedure TUnSwSettings.ResetDefaults();
+procedure TUnSwSettings.ResetDefaults(const AColorsOnly: Boolean);
   procedure ResetDialog(const ADialog: TUnSwDialogSettings);
   begin
     ADialog.IncludeDataModules    := True;
@@ -323,8 +322,11 @@ procedure TUnSwSettings.ResetDefaults();
   end;
 
 begin
-  ResetDialog(FFormsDialog);
-  ResetDialog(FUnitsDialog);
+  if not AColorsOnly then
+  begin
+    ResetDialog(FFormsDialog);
+    ResetDialog(FUnitsDialog);
+  end;
 
   FColors.Enabled       := True;
   FColors.DataModules   := RGB( 35, 120,  35);  // Green

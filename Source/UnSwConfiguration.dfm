@@ -202,10 +202,23 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
           OnClick = PickColor
         end
       end
+      object btnDefault: TButton
+        Left = 8
+        Top = 135
+        Width = 109
+        Height = 25
+        Caption = 'Reset to &default'
+        TabOrder = 2
+        OnClick = btnDefaultClick
+      end
     end
     object tsAbout: TTabSheet
       Caption = 'About...'
       ImageIndex = 1
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       DesignSize = (
         287
         181)
@@ -334,7 +347,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   end
   object dlgColor: TColorDialog
     Options = [cdFullOpen]
-    Left = 12
-    Top = 176
+    Left = 260
+    Top = 160
   end
 end

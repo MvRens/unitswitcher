@@ -21,6 +21,7 @@ type
   TfrmUnSwConfiguration = class(TForm)
     btnCancel:                                  TButton;
     btnDataModuleColor:                         TButton;
+    btnDefault:                                 TButton;
     btnFormColor:                               TButton;
     btnOk:                                      TButton;
     btnProjectColor:                            TButton;
@@ -39,6 +40,7 @@ type
     tsAbout:                                    TTabSheet;
     tsGeneral:                                  TTabSheet;
 
+    procedure btnDefaultClick(Sender: TObject);
     procedure chkCustomColorClick(Sender: TObject);
     procedure lblBugReportClick(Sender: TObject);
     procedure PickColor(Sender: TObject);
@@ -115,6 +117,18 @@ begin
   Settings.Save();
 end;
 
+
+procedure TfrmUnSwConfiguration.btnDefaultClick(Sender: TObject);
+begin
+  if MessageBox(Self.Handle, 'Are you sure you want to revert the color ' +
+                             'settings? This action can not be undone.',
+                             'Reset to default', MB_YESNO or MB_ICONQUESTION) = ID_YES then
+  begin
+    Settings.ResetDefaults(True);
+    Settings.Save();
+    LoadSettings();
+  end;
+end;
 
 procedure TfrmUnSwConfiguration.chkCustomColorClick(Sender: TObject);
 const
