@@ -215,10 +215,6 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
     object tsAbout: TTabSheet
       Caption = 'About...'
       ImageIndex = 1
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         287
         181)
