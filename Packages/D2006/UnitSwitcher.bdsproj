@@ -165,7 +165,8 @@
 			<VersionInfoKeys Name="ProductName"></VersionInfoKeys>
 			<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
 			<VersionInfoKeys Name="Comments"></VersionInfoKeys>
-		</VersionInfoKeys>  <Excluded_Packages>
+		</VersionInfoKeys>  
+    <Excluded_Packages>
       <Excluded_Packages Name="F:\Components\UnitSwitcher\Lib\D2006\UnitSwitcherD2006.bpl">UnitSwitcher</Excluded_Packages>
     </Excluded_Packages>
   </Delphi.Personality>

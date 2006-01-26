@@ -40,6 +40,7 @@ contains
   UnSwDialog in '..\..\Source\UnSwDialog.pas' {frmUnSwDialog},
   UnSwFilters in '..\..\Source\UnSwFilters.pas',
   UnSwSettings in '..\..\Source\UnSwSettings.pas',
-  UnSwConfiguration in '..\..\Source\UnSwConfiguration.pas' {frmUnSwConfiguration};
+  UnSwConfiguration in '..\..\Source\UnSwConfiguration.pas' {frmUnSwConfiguration},
+  UnSwShortcuts in '..\..\Source\UnSwShortcuts.pas' {frmUnSwShortcuts};
 
 end.
