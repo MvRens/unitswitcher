@@ -268,7 +268,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Top = 23
         Width = 54
         Height = 13
-        Caption = 'Version 0.3'
+        Caption = 'Version 0.4'
       end
       object TLabel
         Left = 135
@@ -316,6 +316,21 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Font.Style = [fsUnderline]
         ParentFont = False
         OnClick = lblBugReportClick
+      end
+      object lblShortcutKeys: TLabel
+        Left = 56
+        Top = 141
+        Width = 127
+        Height = 13
+        Cursor = crHandPoint
+        Caption = 'Overview of shortcut keys'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clBlue
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsUnderline]
+        ParentFont = False
+        OnClick = lblShortcutKeysClick
       end
     end
   end

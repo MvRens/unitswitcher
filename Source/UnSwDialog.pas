@@ -6,6 +6,8 @@
 }
 unit UnSwDialog;
 
+{$WARN SYMBOL_PLATFORM OFF}
+
 interface
 uses
   ActnList,
@@ -39,6 +41,7 @@ type
   TfrmUnSwDialog = class(TForm)
     actMRUNext:                                 TAction;
     actMRUPrior:                                TAction;
+    actOpenDFMProperties:                       TAction;
     actOpenFolder:                              TAction;
     actOpenProperties:                          TAction;
     actSelectAll:                               TAction;
@@ -58,6 +61,7 @@ type
     lblSubFilters:                              TLabel;
     lstUnits:                                   TListBox;
     pmnUnits:                                   TPopupMenu;
+    pmnUnitsOpenDFMProperties:                  TMenuItem;
     pmnUnitsOpenFolder:                         TMenuItem;
     pmnUnitsOpenProperties:                     TMenuItem;
     pmnUnitsSelectAll:                          TMenuItem;
@@ -72,10 +76,10 @@ type
     pnlSearch:                                  TPanel;
     pnlSubFilters:                              TPanel;
     sbStatus:                                   TStatusBar;
-    procedure cmbSearchKeyPress(Sender: TObject; var Key: Char);
 
     procedure actMRUNextExecute(Sender: TObject);
     procedure actMRUPriorExecute(Sender: TObject);
+    procedure actOpenDFMPropertiesExecute(Sender: TObject);
     procedure actOpenFolderExecute(Sender: TObject);
     procedure actOpenPropertiesExecute(Sender: TObject);
     procedure actSelectAllExecute(Sender: TObject);
@@ -83,11 +87,14 @@ type
     procedure btnConfigurationClick(Sender: TObject);
     procedure cmbSearchChange(Sender: TObject);
     procedure cmbSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure cmbSearchKeyPress(Sender: TObject; var Key: Char);
     procedure FormResize(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure lstUnitsClick(Sender: TObject);
     procedure lstUnitsData(Control: TWinControl; Index: Integer; var Data: string);
     procedure lstUnitsDblClick(Sender: TObject);
     procedure lstUnitsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+    procedure pmnUnitsPopup(Sender: TObject);
     procedure SortExecute(Sender: TObject);
     procedure TypeFilterChange(Sender: TObject);
   private
@@ -135,31 +142,46 @@ uses
   SysUtils,
 
   UnSwConfiguration,
-  UnSwSettings, Dialogs;
+  UnSwSettings;
 
 type
-  TUnSwOpenVisitor            = class(TInterfacedObject, IUnSwVisitor)
+  TUnSwOpenVisitor = class(TInterfacedObject, IUnSwVisitor)
   private
     FProcessed:     TStringList;
   protected
     function IsProcessed(const AFileName: String; const ARegister: Boolean = True): Boolean;
     procedure OpenFile(const AFileName: String); virtual; abstract;
 
-    procedure VisitModule(const AUnit: TUnSwModuleUnit);
-    procedure VisitProject(const AUnit: TUnSwProjectUnit);
+    procedure VisitModule(const AUnit: TUnSwModuleUnit); virtual;
+    procedure VisitProject(const AUnit: TUnSwProjectUnit); virtual;
   public
     constructor Create();
     destructor Destroy(); override;
   end;
 
-  TUnSwOpenFolderVisitor      = class(TUnSwOpenVisitor)
+  TUnSwOpenFolderVisitor = class(TUnSwOpenVisitor)
   protected
     procedure OpenFile(const AFileName: String); override;
   end;
 
-  TUnSwOpenPropertiesVisitor  = class(TUnSwOpenVisitor)
+  TUnSwOpenPropertiesVisitor = class(TUnSwOpenVisitor)
   protected
     procedure OpenFile(const AFileName: String); override;
+  end;
+
+  TUnSwOpenDFMPropertiesVisitor = class(TUnSwOpenPropertiesVisitor)
+  protected
+    procedure VisitModule(const AUnit: TUnSwModuleUnit); override;
+    procedure VisitProject(const AUnit: TUnSwProjectUnit); override;
+  end;
+
+  TUnSwReadOnlyVisitor = class(TUnSwOpenVisitor)
+  private
+    FReadOnlyCount: Integer;
+  protected
+    procedure OpenFile(const AFileName: String); override;
+  public
+    property ReadOnlyCount:     Integer read FReadOnlyCount;
   end;
 
 
@@ -241,6 +263,32 @@ begin
     pInfo.fMask   := SEE_MASK_INVOKEIDLIST;
     pInfo.lpVerb  := 'properties';
     ShellExecuteEx(@pInfo);
+  end;
+end;
+
+
+{ TUnSwOpenDFMPropertiesVisitor }
+procedure TUnSwOpenDFMPropertiesVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
+begin
+  OpenFile(ChangeFileExt(AUnit.FileName, '.dfm'));
+end;
+
+procedure TUnSwOpenDFMPropertiesVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
+begin
+end;
+
+
+{ TUnSwReadOnlyVisitor }
+procedure TUnSwReadOnlyVisitor.OpenFile(const AFileName: String);
+var
+  iAttr:      Integer;
+
+begin
+  if not IsProcessed(AFileName) then
+  begin
+    iAttr := FileGetAttr(AFileName);
+    if (iAttr and faReadOnly) <> 0 then
+      Inc(FReadOnlyCount);
   end;
 end;
 
@@ -407,6 +455,9 @@ begin
     if lstUnits.SelCount = 0 then
       lstUnits.Selected[0]  := True;
   end;
+
+  if Assigned(lstUnits.OnClick) then
+    lstUnits.OnClick(nil);
 end;
 
 function SortByName(Item1, Item2: Pointer): Integer;
@@ -684,6 +735,20 @@ begin
   end;
 end;
 
+procedure TfrmUnSwDialog.actOpenDFMPropertiesExecute(Sender: TObject);
+var
+  pUnits:     TUnSwUnitList;
+
+begin
+  pUnits  := GetActiveUnits();
+  if Assigned(pUnits) then
+  try
+    pUnits.AcceptVisitor(TUnSwOpenDFMPropertiesVisitor.Create());
+  finally
+    FreeAndNil(pUnits);
+  end;
+end;
+
 
 procedure TfrmUnSwDialog.btnConfigurationClick(Sender: TObject);
 begin
@@ -744,6 +809,37 @@ begin
   btnOK.Click();
 end;
 
+procedure TfrmUnSwDialog.lstUnitsClick(Sender: TObject);
+var
+  pUnits:     TUnSwUnitList;
+  pVisitor:   TUnSwReadOnlyVisitor;
+  sStatus:    String;
+
+begin
+  pUnits  := GetActiveUnits();
+  if Assigned(pUnits) then
+  try
+    pVisitor  := TUnSwReadOnlyVisitor.Create();
+    try
+      pUnits.AcceptVisitor(pVisitor);
+
+      sStatus := '';
+      if pVisitor.ReadOnlyCount > 0 then
+        if pVisitor.ReadOnlyCount = 1 then
+          sStatus := '1 read-only unit selected'
+        else
+          sStatus := Format('%d read-only units selected',
+                            [pVisitor.ReadOnlyCount]);
+
+      sbStatus.Panels[0].Text := sStatus;
+    finally
+      FreeAndNil(pVisitor);
+    end;
+  finally
+    FreeAndNil(pUnits);
+  end;
+end;
+
 procedure TfrmUnSwDialog.lstUnitsData(Control: TWinControl; Index: Integer;
                                       var Data: string);
 begin
@@ -790,6 +886,38 @@ begin
     DrawText(Canvas.Handle, PChar(text), Length(text), textRect, DT_SINGLELINE or
              DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
   end;
+end;
+
+procedure TfrmUnSwDialog.pmnUnitsPopup(Sender: TObject);
+var
+  bDFM:       Boolean;
+  bUnits:     Boolean;
+  iUnit:      Integer;
+  pUnits:     TUnSwUnitList;
+
+begin
+  bDFM      := False;
+  bUnits    := False;
+
+  pUnits    := GetActiveUnits();
+  if Assigned(pUnits) then
+  try
+    bUnits  := (pUnits.Count > 0);
+
+    for iUnit := 0 to Pred(pUnits.Count) do
+      if (pUnits[iUnit] is TUnSwModuleUnit) and
+         (TUnSwModuleUnit(pUnits[iUnit]).UnitType in [swutForm, swutDataModule]) then
+      begin
+        bDFM  := True;
+        break;
+      end;
+  finally
+    FreeAndNil(pUnits);
+  end;
+
+  actOpenFolder.Enabled         := bUnits;
+  actOpenProperties.Enabled     := bUnits;
+  actOpenDFMProperties.Enabled  := bDFM;
 end;
 
 end.

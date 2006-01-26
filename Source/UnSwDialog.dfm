@@ -1,10 +1,10 @@
 object frmUnSwDialog: TfrmUnSwDialog
   Left = 187
   Top = 83
-  Width = 320
-  Height = 425
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher'
+  ClientHeight = 398
+  ClientWidth = 312
   Color = clBtnFace
   Constraints.MinHeight = 240
   Constraints.MinWidth = 290
@@ -65,7 +65,9 @@ object frmUnSwDialog: TfrmUnSwDialog
         Top = 0
         Width = 304
         Height = 21
+        AutoComplete = False
         Anchors = [akLeft, akTop, akRight]
+        DropDownCount = 10
         ItemHeight = 13
         TabOrder = 0
         OnChange = cmbSearchChange
@@ -84,6 +86,7 @@ object frmUnSwDialog: TfrmUnSwDialog
       MultiSelect = True
       PopupMenu = pmnUnits
       TabOrder = 1
+      OnClick = lstUnitsClick
       OnData = lstUnitsData
       OnDblClick = lstUnitsDblClick
       OnDrawItem = lstUnitsDrawItem
@@ -637,9 +640,14 @@ object frmUnSwDialog: TfrmUnSwDialog
       OnExecute = actOpenFolderExecute
     end
     object actOpenProperties: TAction
-      Caption = '&Properties'
+      Caption = '.PAS &Properties'
       ShortCut = 49165
       OnExecute = actOpenPropertiesExecute
+    end
+    object actOpenDFMProperties: TAction
+      Caption = '&.DFM Properties'
+      ShortCut = 24589
+      OnExecute = actOpenDFMPropertiesExecute
     end
     object actMRUPrior: TAction
       Caption = 'actMRUPrior'
@@ -653,6 +661,7 @@ object frmUnSwDialog: TfrmUnSwDialog
     end
   end
   object pmnUnits: TPopupMenu
+    OnPopup = pmnUnitsPopup
     Left = 72
     Top = 264
     object pmnUnitsSelectAll: TMenuItem
@@ -678,6 +687,9 @@ object frmUnSwDialog: TfrmUnSwDialog
     end
     object pmnUnitsOpenProperties: TMenuItem
       Action = actOpenProperties
+    end
+    object pmnUnitsOpenDFMProperties: TMenuItem
+      Action = actOpenDFMProperties
     end
   end
 end

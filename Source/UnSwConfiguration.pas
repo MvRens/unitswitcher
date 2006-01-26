@@ -39,6 +39,8 @@ type
     pnlCustomColor:                             TPanel;
     tsAbout:                                    TTabSheet;
     tsGeneral:                                  TTabSheet;
+    lblShortcutKeys: TLabel;
+    procedure lblShortcutKeysClick(Sender: TObject);
 
     procedure btnDefaultClick(Sender: TObject);
     procedure chkCustomColorClick(Sender: TObject);
@@ -60,7 +62,8 @@ uses
   ShellAPI,
   Windows,
 
-  UnSwSettings;
+  UnSwSettings,
+  UnSwShortcuts;
 
 {$R *.dfm}
 
@@ -96,6 +99,11 @@ end;
 procedure TfrmUnSwConfiguration.lblBugReportClick(Sender: TObject);
 begin
   ShellExecute(0, 'open', 'http://projects.kamadev.net/', nil, nil, SW_SHOWNORMAL);
+end;
+
+procedure TfrmUnSwConfiguration.lblShortcutKeysClick(Sender: TObject);
+begin
+  TfrmUnSwShortcuts.Execute();
 end;
 
 procedure TfrmUnSwConfiguration.LoadSettings();
