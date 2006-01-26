@@ -595,8 +595,8 @@ begin
   else
     dialogSettings  := Settings.UnitsDialog;
 
-  dialogSettings.IncludeDataModules   := chkForms.Checked;
-  dialogSettings.IncludeForms         := chkDataModules.Checked;
+  dialogSettings.IncludeDataModules   := chkDataModules.Checked;
+  dialogSettings.IncludeForms         := chkForms.Checked;
   dialogSettings.IncludeUnits         := chkUnits.Checked;
   dialogSettings.IncludeProjectSource := chkProjectSource.Checked;
 

@@ -1,10 +1,10 @@
 object frmUnSwDialog: TfrmUnSwDialog
   Left = 187
   Top = 83
+  Width = 320
+  Height = 425
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher'
-  ClientHeight = 398
-  ClientWidth = 312
   Color = clBtnFace
   Constraints.MinHeight = 240
   Constraints.MinWidth = 290
