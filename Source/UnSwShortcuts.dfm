@@ -4,7 +4,7 @@ object frmUnSwShortcuts: TfrmUnSwShortcuts
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'UnitSwitcher Shortcut keys'
-  ClientHeight = 470
+  ClientHeight = 484
   ClientWidth = 354
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -221,14 +221,14 @@ object frmUnSwShortcuts: TfrmUnSwShortcuts
   end
   object TLabel
     Left = 28
-    Top = 384
+    Top = 400
     Width = 68
     Height = 13
     Caption = 'Ctrl-Alt-Enter:'
   end
   object TLabel
     Left = 168
-    Top = 384
+    Top = 400
     Width = 95
     Height = 13
     Caption = 'Open file properties'
@@ -276,21 +276,35 @@ object frmUnSwShortcuts: TfrmUnSwShortcuts
   end
   object TLabel
     Left = 28
-    Top = 400
+    Top = 416
     Width = 77
     Height = 13
     Caption = 'Ctrl-Shift-Enter:'
   end
   object TLabel
     Left = 168
-    Top = 400
+    Top = 416
     Width = 156
     Height = 13
     Caption = 'Open file properties for the .dfm'
   end
+  object TLabel
+    Left = 28
+    Top = 384
+    Width = 49
+    Height = 13
+    Caption = 'Ctrl-Alt-R:'
+  end
+  object TLabel
+    Left = 168
+    Top = 384
+    Width = 121
+    Height = 13
+    Caption = 'Toggle the read-only flag'
+  end
   object btnOk: TButton
     Left = 139
-    Top = 437
+    Top = 449
     Width = 75
     Height = 25
     Cancel = True

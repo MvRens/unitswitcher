@@ -33,18 +33,18 @@ type
     lblDataModuleColor:                         TLabel;
     lblFormColor:                               TLabel;
     lblProjectColor:                            TLabel;
+    lblShortcutKeys:                            TLabel;
     lblUnitColor:                               TLabel;
     lblVersion:                                 TLabel;
     pcConfiguration:                            TPageControl;
     pnlCustomColor:                             TPanel;
     tsAbout:                                    TTabSheet;
     tsGeneral:                                  TTabSheet;
-    lblShortcutKeys: TLabel;
-    procedure lblShortcutKeysClick(Sender: TObject);
 
     procedure btnDefaultClick(Sender: TObject);
     procedure chkCustomColorClick(Sender: TObject);
     procedure lblBugReportClick(Sender: TObject);
+    procedure lblShortcutKeysClick(Sender: TObject);
     procedure PickColor(Sender: TObject);
   private
     FLabels:        array[0..3] of TLabel;
@@ -72,6 +72,8 @@ class function TfrmUnSwConfiguration.Execute(): Boolean;
 begin
   with Self.Create(nil) do
   try
+    pcConfiguration.ActivePage  := tsGeneral;
+    
     Result  := InternalExecute();
   finally
     Free();

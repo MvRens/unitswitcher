@@ -268,7 +268,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Top = 23
         Width = 54
         Height = 13
-        Caption = 'Version 0.4'
+        Caption = 'Version 0.5'
       end
       object TLabel
         Left = 135
