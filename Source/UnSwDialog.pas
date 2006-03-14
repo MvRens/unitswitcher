@@ -30,12 +30,15 @@ type
   private
     FColor:             TColor;
     FImageIndex:        Integer;
+    FOverlayIndex:      Integer;
   protected
+    procedure VisitUnit(const AUnit: TUnSwUnit);
     procedure VisitModule(const AUnit: TUnSwModuleUnit);
     procedure VisitProject(const AUnit: TUnSwProjectUnit);
   public
     property Color:           TColor  read FColor;
     property ImageIndex:      Integer read FImageIndex;
+    property OverlayIndex:    Integer read FOverlayIndex;
   end;
 
   TfrmUnSwDialog = class(TForm)
@@ -44,6 +47,7 @@ type
     actOpenDFMProperties:                       TAction;
     actOpenFolder:                              TAction;
     actOpenProperties:                          TAction;
+    actReadOnly:                                TAction;
     actSelectAll:                               TAction;
     actSelectInvert:                            TAction;
     actSortByName:                              TAction;
@@ -64,10 +68,12 @@ type
     pmnUnitsOpenDFMProperties:                  TMenuItem;
     pmnUnitsOpenFolder:                         TMenuItem;
     pmnUnitsOpenProperties:                     TMenuItem;
+    pmnUnitsReadOnly:                           TMenuItem;
     pmnUnitsSelectAll:                          TMenuItem;
     pmnUnitsSelectInvert:                       TMenuItem;
     pmnUnitsSep1:                               TMenuItem;
     pmnUnitsSep2:                               TMenuItem;
+    pmnUnitsSep3:                               TMenuItem;
     pmnUnitsSortByName:                         TMenuItem;
     pmnUnitsSortByType:                         TMenuItem;
     pnlButtons:                                 TPanel;
@@ -82,6 +88,7 @@ type
     procedure actOpenDFMPropertiesExecute(Sender: TObject);
     procedure actOpenFolderExecute(Sender: TObject);
     procedure actOpenPropertiesExecute(Sender: TObject);
+    procedure actReadOnlyExecute(Sender: TObject);
     procedure actSelectAllExecute(Sender: TObject);
     procedure actSelectInvertExecute(Sender: TObject);
     procedure btnConfigurationClick(Sender: TObject);
@@ -94,7 +101,7 @@ type
     procedure lstUnitsData(Control: TWinControl; Index: Integer; var Data: string);
     procedure lstUnitsDblClick(Sender: TObject);
     procedure lstUnitsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
-    procedure pmnUnitsPopup(Sender: TObject);
+    procedure lstUnitsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure SortExecute(Sender: TObject);
     procedure TypeFilterChange(Sender: TObject);
   private
@@ -129,6 +136,8 @@ type
 
     procedure LoadSettings();
     procedure SaveSettings();
+
+    procedure UpdateUnitActions();
   public
     class function Execute(const AUnits: TUnSwUnitList;
                            const AFormsOnly: Boolean;
@@ -184,8 +193,27 @@ type
     property ReadOnlyCount:     Integer read FReadOnlyCount;
   end;
 
+  TUnSwSetReadOnlyVisitor = class(TUnSwOpenVisitor)
+  private
+    FReadOnlyFlag: Boolean;
+  protected
+    procedure OpenFile(const AFileName: String); override;
+  public
+    property ReadOnlyFlag: Boolean read FReadOnlyFlag write FReadOnlyFlag;
+  end;
+
 
 {$R *.dfm}
+
+
+function IsReadOnly(const AFileName: String): Boolean;
+var
+  iAttr:    Integer;
+  
+begin
+  iAttr   := FileGetAttr(AFileName);
+  Result  := (iAttr <> -1) and ((iAttr and faReadOnly) <> 0);
+end;
 
 
 { TUnSwOpenVisitor }
@@ -207,9 +235,13 @@ end;
 function TUnSwOpenVisitor.IsProcessed(const AFileName: String;
                                       const ARegister: Boolean): Boolean;
 begin
-  Result  := (FProcessed.IndexOf(AFileName) > -1);
-  if (not Result) and ARegister then
-    FProcessed.Add(AFileName);
+  Result  := True;
+  if FileExists(AFileName) or DirectoryExists(AFileName) then
+  begin
+    Result  := (FProcessed.IndexOf(AFileName) > -1);
+    if (not Result) and ARegister then
+      FProcessed.Add(AFileName);
+  end;
 end;
 
 procedure TUnSwOpenVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
@@ -238,7 +270,7 @@ begin
     sParams := '/e,';
 
     // If it's a file, have explorer highlight it
-    if not DirectoryExists(AFileName) then
+    if not DirectoryExists(sFile) then
       sParams := sParams + '/select,';
 
     sParams := sParams + ExtractShortPathName(sFile);
@@ -280,22 +312,57 @@ end;
 
 { TUnSwReadOnlyVisitor }
 procedure TUnSwReadOnlyVisitor.OpenFile(const AFileName: String);
+begin
+  if not IsProcessed(AFileName) then
+    if IsReadOnly(AFileName) then
+      Inc(FReadOnlyCount);
+end;
+
+
+{ TUnSwSetReadOnlyVisitor }
+procedure TUnSwSetReadOnlyVisitor.OpenFile(const AFileName: String);
 var
-  iAttr:      Integer;
+  fileInfo: TSearchRec;
+  fileAttr: Integer;
+  path: String;
 
 begin
   if not IsProcessed(AFileName) then
   begin
-    iAttr := FileGetAttr(AFileName);
-    if (iAttr and faReadOnly) <> 0 then
-      Inc(FReadOnlyCount);
+    path  := ExtractFilePath(AFileName);
+    if FindFirst(ChangeFileExt(AFileName, '.*'), faAnyFile, fileInfo) = 0 then
+    begin
+      repeat
+        fileAttr := FileGetAttr(path + fileInfo.Name);
+        if fileAttr <> -1 then
+        begin
+          if ReadOnlyFlag then
+            fileAttr  := fileAttr or faReadOnly
+          else
+            fileAttr  := fileAttr and not faReadOnly;
+
+          FileSetAttr(path + fileInfo.Name, fileAttr);
+        end;
+      until FindNext(fileInfo) <> 0;
+
+      FindClose(fileInfo);
+    end;
   end;
 end;
 
 
 { TUnSwStyleVisitor }
+procedure TUnSwStyleVisitor.VisitUnit(const AUnit: TUnSwUnit);
+begin
+  if IsReadOnly(AUnit.FileName) then
+    FOverlayIndex := 5
+  else
+    FOverlayIndex := -1;
+end;
+
 procedure TUnSwStyleVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
 begin
+  VisitUnit(AUnit);
   case AUnit.UnitType of
     swutUnit:
       begin
@@ -320,8 +387,9 @@ end;
 
 procedure TUnSwStyleVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
-  FColor      := Settings.Colors.ProjectSource;
-  FImageIndex := 4;
+  VisitUnit(AUnit);
+  FColor        := Settings.Colors.ProjectSource;
+  FImageIndex   := 4;
 end;
 
 
@@ -419,6 +487,66 @@ begin
     FreeAndNil(FTypeFilteredList);
     FreeAndNil(FSubFilters);
   end;
+end;
+
+procedure TfrmUnSwDialog.UpdateUnitActions();
+var
+  bDFM:       Boolean;
+  bUnits:     Boolean;
+  iUnit:      Integer;
+  pUnits:     TUnSwUnitList;
+  pVisitor:   TUnSwReadOnlyVisitor;
+  sStatus:    String;
+
+begin
+  { Read-only status }
+  pUnits  := GetActiveUnits();
+  if Assigned(pUnits) then
+  try
+    pVisitor  := TUnSwReadOnlyVisitor.Create();
+    try
+      pUnits.AcceptVisitor(pVisitor);
+      actReadOnly.Checked := (pVisitor.ReadOnlyCount > 0);
+
+      sStatus := '';
+      if pVisitor.ReadOnlyCount > 0 then
+        if pVisitor.ReadOnlyCount = 1 then
+          sStatus := '1 read-only unit selected'
+        else
+          sStatus := Format('%d read-only units selected',
+                            [pVisitor.ReadOnlyCount]);
+
+      sbStatus.Panels[0].Text := sStatus;
+    finally
+      FreeAndNil(pVisitor);
+    end;
+  finally
+    FreeAndNil(pUnits);
+  end;
+
+  { Properties }
+  bDFM      := False;
+  bUnits    := False;
+
+  pUnits    := GetActiveUnits();
+  if Assigned(pUnits) then
+  try
+    bUnits  := (pUnits.Count > 0);
+
+    for iUnit := 0 to Pred(pUnits.Count) do
+      if (pUnits[iUnit] is TUnSwModuleUnit) and
+         (TUnSwModuleUnit(pUnits[iUnit]).UnitType in [swutForm, swutDataModule]) then
+      begin
+        bDFM  := True;
+        break;
+      end;
+  finally
+    FreeAndNil(pUnits);
+  end;
+
+  actOpenFolder.Enabled         := bUnits;
+  actOpenProperties.Enabled     := bUnits;
+  actOpenDFMProperties.Enabled  := bDFM;
 end;
 
 procedure TfrmUnSwDialog.UpdateList();
@@ -689,6 +817,9 @@ begin
   cmbSearch.ItemIndex := FMRUIndex;
   ActiveControl       := cmbSearch;
   cmbSearch.SelectAll();
+
+  if Assigned(cmbSearch.OnChange) then
+    cmbSearch.OnChange(nil);
 end;
 
 procedure TfrmUnSwDialog.actMRUNextExecute(Sender: TObject);
@@ -810,34 +941,8 @@ begin
 end;
 
 procedure TfrmUnSwDialog.lstUnitsClick(Sender: TObject);
-var
-  pUnits:     TUnSwUnitList;
-  pVisitor:   TUnSwReadOnlyVisitor;
-  sStatus:    String;
-
 begin
-  pUnits  := GetActiveUnits();
-  if Assigned(pUnits) then
-  try
-    pVisitor  := TUnSwReadOnlyVisitor.Create();
-    try
-      pUnits.AcceptVisitor(pVisitor);
-
-      sStatus := '';
-      if pVisitor.ReadOnlyCount > 0 then
-        if pVisitor.ReadOnlyCount = 1 then
-          sStatus := '1 read-only unit selected'
-        else
-          sStatus := Format('%d read-only units selected',
-                            [pVisitor.ReadOnlyCount]);
-
-      sbStatus.Panels[0].Text := sStatus;
-    finally
-      FreeAndNil(pVisitor);
-    end;
-  finally
-    FreeAndNil(pUnits);
-  end;
+  UpdateUnitActions();
 end;
 
 procedure TfrmUnSwDialog.lstUnitsData(Control: TWinControl; Index: Integer;
@@ -882,42 +987,56 @@ begin
     InflateRect(textRect, -2, -2);
     ilsTypes.Draw(Canvas, textRect.Left, textRect.Top, FStyleVisitor.ImageIndex);
 
+    if FStyleVisitor.OverlayIndex > -1 then
+      ilsTypes.Draw(Canvas, textRect.Left, textRect.Top, FStyleVisitor.OverlayIndex);
+
     Inc(textRect.Left, ilsTypes.Width + 4);
     DrawText(Canvas.Handle, PChar(text), Length(text), textRect, DT_SINGLELINE or
              DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
   end;
 end;
 
-procedure TfrmUnSwDialog.pmnUnitsPopup(Sender: TObject);
+procedure TfrmUnSwDialog.lstUnitsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
-  bDFM:       Boolean;
-  bUnits:     Boolean;
-  iUnit:      Integer;
-  pUnits:     TUnSwUnitList;
+  itemIndex: Integer;
 
 begin
-  bDFM      := False;
-  bUnits    := False;
+  { Bij rechtermuisknop het item selecteren indien deze niet al
+    geselecteerd was }
+  if Button = mbRight then
+  begin
+    itemIndex := lstUnits.ItemAtPos(Point(X, Y), True);
+    if (itemIndex > -1) and (not lstUnits.Selected[itemIndex]) then
+    begin
+      lstUnits.ClearSelection;
+      lstUnits.Selected[itemIndex]  := True;
+      UpdateUnitActions();
+    end;
+  end;
+end;
 
-  pUnits    := GetActiveUnits();
+procedure TfrmUnSwDialog.actReadOnlyExecute(Sender: TObject);
+var
+  pUnits:       TUnSwUnitList;
+  pVisitor:     TUnSwSetReadOnlyVisitor;
+
+begin
+  pUnits  := GetActiveUnits();
   if Assigned(pUnits) then
   try
-    bUnits  := (pUnits.Count > 0);
-
-    for iUnit := 0 to Pred(pUnits.Count) do
-      if (pUnits[iUnit] is TUnSwModuleUnit) and
-         (TUnSwModuleUnit(pUnits[iUnit]).UnitType in [swutForm, swutDataModule]) then
-      begin
-        bDFM  := True;
-        break;
-      end;
+    pVisitor  := TUnSwSetReadOnlyVisitor.Create();
+    try
+      pVisitor.ReadOnlyFlag := not actReadOnly.Checked;
+      pUnits.AcceptVisitor(pVisitor);
+    finally
+      FreeAndNil(pVisitor);
+    end;
   finally
     FreeAndNil(pUnits);
+    
+    lstUnits.Invalidate();
+    UpdateUnitActions();
   end;
-
-  actOpenFolder.Enabled         := bUnits;
-  actOpenProperties.Enabled     := bUnits;
-  actOpenDFMProperties.Enabled  := bDFM;
 end;
 
 end.
