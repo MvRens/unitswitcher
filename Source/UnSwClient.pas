@@ -30,7 +30,7 @@ type
     FViewFormAction:      TContainedAction;
   protected
     function ActiveFileName(): String;
-    {$IFDEF DELPHI7}
+    {$IFDEF DELPHI7ORLOWER}
     function ActiveGroup(): IOTAProjectGroup;
     {$ENDIF}
     function ActiveProject(): IOTAProject;
@@ -58,7 +58,7 @@ begin
     Assert(Supports(BorlandIDEServices, IOTAModuleServices),
                     'BorlandIDEServices does not support the ' +
                     'IOTAModuleServices interface.');
-    {$IFDEF DELPHI7}
+    {$IFDEF DELPHI7ORLOWER}
     Assert(Supports(BorlandIDEServices, IOTAActionServices),
                     'BorlandIDEServices does not support the ' +
                     'IOTAActionServices interface.');
@@ -116,7 +116,7 @@ begin
   end;
 end;
 
-{$IFDEF DELPHI7}
+{$IFDEF DELPHI7ORLOWER}
 function TUnitSwitcherHook.ActiveGroup(): IOTAProjectGroup;
 var
   module:           IOTAModule;
@@ -136,7 +136,7 @@ end;
 {$ENDIF}
 
 function TUnitSwitcherHook.ActiveProject(): IOTAProject;
-{$IFDEF DELPHI7}
+{$IFDEF DELPHI7ORLOWER}
 var
   projectGroup:       IOTAProjectGroup;
   module:             IOTAModule;
@@ -145,7 +145,7 @@ var
 {$ENDIF}
 
 begin
-  {$IFDEF DELPHI7}
+  {$IFDEF DELPHI7ORLOWER}
   Result        := nil;
   projectGroup  := ActiveGroup();
   if not Assigned(projectGroup) then

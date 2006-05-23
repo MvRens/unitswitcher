@@ -145,7 +145,7 @@ type
 
 implementation
 uses
-  {$IFDEF DELPHI7}
+  {$IFDEF DELPHI7ORLOWER}
   ActnList,
   {$ENDIF}
   SysUtils;
@@ -271,7 +271,7 @@ begin
 end;
 
 procedure TUnSwProjectUnit.Activate(const ASource: Boolean);
-{$IFDEF DELPHI7}
+{$IFDEF DELPHI7ORLOWER}
 var
   actionIndex:    Integer;
   ntaServices:    INTAServices;
@@ -279,7 +279,7 @@ var
 {$ENDIF}
 
 begin
-  {$IFDEF DELPHI7}
+  {$IFDEF DELPHI7ORLOWER}
   // Bit of a hack, but opening the file itself will result in Delphi 7
   // reloading the project...
   ntaServices := (BorlandIDEServices as INTAServices);
