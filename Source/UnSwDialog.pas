@@ -120,6 +120,7 @@ type
     FTypeFilter:            TUnSwUnitTypeFilter;
     FSubFilter:             TUnSwUnitSimpleFilter;
     FInputFilter:           TUnSwUnitSimpleFilter;
+    FLastFilter:            String;
 
     FStyleVisitor:          TUnSwStyleVisitor;
 
@@ -168,21 +169,25 @@ type
     destructor Destroy(); override;
   end;
 
+
   TUnSwOpenFolderVisitor = class(TUnSwOpenVisitor)
   protected
     procedure OpenFile(const AFileName: String); override;
   end;
+
 
   TUnSwOpenPropertiesVisitor = class(TUnSwOpenVisitor)
   protected
     procedure OpenFile(const AFileName: String); override;
   end;
 
+
   TUnSwOpenDFMPropertiesVisitor = class(TUnSwOpenPropertiesVisitor)
   protected
     procedure VisitModule(const AUnit: TUnSwModuleUnit); override;
     procedure VisitProject(const AUnit: TUnSwProjectUnit); override;
   end;
+
 
   TUnSwReadOnlyVisitor = class(TUnSwOpenVisitor)
   private
@@ -192,6 +197,7 @@ type
   public
     property ReadOnlyCount:     Integer read FReadOnlyCount;
   end;
+
 
   TUnSwSetReadOnlyVisitor = class(TUnSwOpenVisitor)
   private
@@ -225,12 +231,14 @@ begin
   FProcessed.CaseSensitive  := False;
 end;
 
+
 destructor TUnSwOpenVisitor.Destroy();
 begin
   FreeAndNil(FProcessed);
 
   inherited;
 end;
+
 
 function TUnSwOpenVisitor.IsProcessed(const AFileName: String;
                                       const ARegister: Boolean): Boolean;
@@ -244,10 +252,12 @@ begin
   end;
 end;
 
+
 procedure TUnSwOpenVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
 begin
   OpenFile(AUnit.FileName);
 end;
+
 
 procedure TUnSwOpenVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
@@ -305,6 +315,7 @@ begin
   OpenFile(ChangeFileExt(AUnit.FileName, '.dfm'));
 end;
 
+
 procedure TUnSwOpenDFMPropertiesVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
 end;
@@ -360,6 +371,7 @@ begin
     FOverlayIndex := -1;
 end;
 
+
 procedure TUnSwStyleVisitor.VisitModule(const AUnit: TUnSwModuleUnit);
 begin
   VisitUnit(AUnit);
@@ -385,6 +397,7 @@ begin
   end;
 end;
 
+
 procedure TUnSwStyleVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
   VisitUnit(AUnit);
@@ -409,10 +422,12 @@ begin
   end;
 end;
 
+
 procedure TfrmUnSwDialog.FormResize(Sender: TObject);
 begin
   lstUnits.Invalidate();
 end;
+
 
 procedure TfrmUnSwDialog.FormShow(Sender: TObject);
 begin
@@ -420,10 +435,11 @@ begin
   UpdateTypeFilter();
 end;
 
+
 function TfrmUnSwDialog.InternalExecute(): TUnSwUnitList;
 type
   TUnSwUnitSimpleFilterClass  = class of TUnSwUnitSimpleFilter;
-  
+
 var
   iIndex:       Integer;
   pClass:       TUnSwUnitSimpleFilterClass;
@@ -434,15 +450,15 @@ begin
   FTypeFilteredList   := TUnSwUnitList.Create();
   FSubFilteredList    := TUnSwUnitList.Create();
   FInputFilteredList  := TUnSwUnitList.Create();
-  FTypeFilter         := TUnSwUnitTypeFilter.Create(FTypeFilteredList);
+  FTypeFilter         := TUnSwUnitTypeFilter.Create;
 
   if FFormsOnly then
     pClass            := TUnSwUnitSimpleFormNameFilter
   else
     pClass            := TUnSwUnitSimpleNameFilter;
 
-  FSubFilter          := pClass.Create(FSubFilteredList);
-  FInputFilter        := pClass.Create(FInputFilteredList);
+  FSubFilter          := pClass.Create;
+  FInputFilter        := pClass.Create;
 
   try
     LoadSettings();
@@ -488,6 +504,7 @@ begin
     FreeAndNil(FSubFilters);
   end;
 end;
+
 
 procedure TfrmUnSwDialog.UpdateUnitActions();
 var
@@ -549,18 +566,43 @@ begin
   actOpenDFMProperties.Enabled  := bDFM;
 end;
 
+
 procedure TfrmUnSwDialog.UpdateList();
 var
   activeUnit:       TUnSwUnit;
   activeUnits:      TUnSwUnitList;
   itemIndex:        Integer;
   listIndex:        Integer;
+  filteredList:     TUnSwUnitList;
+  selStart:         Integer;
 
 begin
-  activeUnits := GetActiveUnits();
+  activeUnits   := GetActiveUnits();
 
-  FInputFilteredList.Clone(FSubFilteredList);
-  FInputFilteredList.AcceptVisitor(FInputFilter);
+  filteredList  := TUnSwUnitList.Create();
+  try
+    filteredList.Clone(FSubFilteredList);
+    FInputFilter.FilterList(filteredList);
+
+    if (filteredList.Count = 0) and (not Settings.Filter.AllowEmptyResult) then
+    begin
+      { Only enforce AllowEmptyResult when adding to the filter }
+      if Length(FInputFilter.Filter) > Length(FLastFilter) then
+      begin
+        FInputFilter.Filter := FLastFilter;
+        selStart            := cmbSearch.SelStart;
+        cmbSearch.Text      := FLastFilter;
+        cmbSearch.SelStart  := selStart;
+        Exit;
+      end;
+    end;
+
+    FLastFilter     := FInputFilter.Filter;
+    FInputFilteredList.Clone(filteredList);
+  finally
+    FreeAndNil(filteredList);
+  end;
+
 
   lstUnits.Count  := FInputFilteredList.Count;
   if FInputFilteredList.Count > 0 then
@@ -588,10 +630,12 @@ begin
     lstUnits.OnClick(nil);
 end;
 
+
 function SortByName(Item1, Item2: Pointer): Integer;
 begin
   Result  := CompareText(TUnSwUnit(Item1).Name, TUnSwUnit(Item2).Name)
 end;
+
 
 function SortByType(Item1, Item2: Pointer): Integer;
 const
@@ -641,6 +685,7 @@ begin
     Result  := SortByName(Item1, Item2);
 end;
 
+
 procedure TfrmUnSwDialog.UpdateTypeFilter();
 begin
   FTypeFilter.IncludeUnits          := ((not FFormsOnly) and chkUnits.Checked);
@@ -649,7 +694,7 @@ begin
   FTypeFilter.IncludeDataModules    := chkDataModules.Checked;
 
   FTypeFilteredList.Clone(FUnitList);
-  FTypeFilteredList.AcceptVisitor(FTypeFilter);
+  FTypeFilter.FilterList(FTypeFilteredList);
 
   if actSortByName.Checked then
     FTypeFilteredList.Sort(SortByName)
@@ -659,6 +704,7 @@ begin
   UpdateSubFilters();
 end;
 
+
 procedure TfrmUnSwDialog.PopFilter();
 begin
   if FSubFilters.Count > 0 then
@@ -667,6 +713,7 @@ begin
     UpdateSubFilters();
   end;
 end;
+
 
 procedure TfrmUnSwDialog.UpdateSubFilters();
 var
@@ -682,7 +729,7 @@ begin
     begin
       sFilters          := sFilters + FSubFilters[iFilter] + ' '#187' ';
       FSubFilter.Filter := FSubFilters[iFilter];
-      FSubFilteredList.AcceptVisitor(FSubFilter);
+      FSubFilter.FilterList(FSubFilteredList);
     end;
 
     lblSubFilters.Caption := Trim(sFilters);
@@ -707,6 +754,7 @@ begin
     UpdateSubFilters();
   end;
 end;
+
 
 function TfrmUnSwDialog.GetActiveUnits(): TUnSwUnitList;
 var
@@ -764,6 +812,7 @@ begin
   end;
 end;
 
+
 procedure TfrmUnSwDialog.SaveSettings();
 var
   dialogSettings:       TUnSwDialogSettings;
@@ -796,6 +845,7 @@ begin
   lstUnits.SelectAll();
 end;
 
+
 procedure TfrmUnSwDialog.actSelectInvertExecute(Sender: TObject);
 var
   iItem:      Integer;
@@ -804,6 +854,7 @@ begin
   for iItem := Pred(lstUnits.Count) downto 0 do
     lstUnits.Selected[iItem]  := not lstUnits.Selected[iItem];
 end;
+
 
 procedure TfrmUnSwDialog.SortExecute(Sender: TObject);
 begin
@@ -822,6 +873,7 @@ begin
     cmbSearch.OnChange(nil);
 end;
 
+
 procedure TfrmUnSwDialog.actMRUNextExecute(Sender: TObject);
 begin
   if FMRUIndex < Pred(FMRUList.Count) then
@@ -830,6 +882,7 @@ begin
   SelectMRUItem();
 end;
 
+
 procedure TfrmUnSwDialog.actMRUPriorExecute(Sender: TObject);
 begin
   if FMRUIndex >= -1 then
@@ -837,6 +890,7 @@ begin
 
   SelectMRUItem();
 end;
+
 
 procedure TfrmUnSwDialog.actOpenFolderExecute(Sender: TObject);
 var
@@ -852,6 +906,7 @@ begin
   end;
 end;
 
+
 procedure TfrmUnSwDialog.actOpenPropertiesExecute(Sender: TObject);
 var
   pUnits:     TUnSwUnitList;
@@ -865,6 +920,7 @@ begin
     FreeAndNil(pUnits);
   end;
 end;
+
 
 procedure TfrmUnSwDialog.actOpenDFMPropertiesExecute(Sender: TObject);
 var
@@ -887,11 +943,16 @@ begin
     lstUnits.Invalidate();
 end;
 
+
 procedure TfrmUnSwDialog.cmbSearchChange(Sender: TObject);
 begin
-  FInputFilter.Filter := cmbSearch.Text;
-  UpdateList();
+  if cmbSearch.Text <> FInputFilter.Filter then
+  begin
+    FInputFilter.Filter := cmbSearch.Text;
+    UpdateList();
+  end;
 end;
+
 
 procedure TfrmUnSwDialog.cmbSearchKeyDown(Sender: TObject; var Key: Word;
                                           Shift: TShiftState);
@@ -922,6 +983,7 @@ begin
       end;
 end;
 
+
 procedure TfrmUnSwDialog.cmbSearchKeyPress(Sender: TObject; var Key: Char);
 begin
   // Ctrl-Backspace
@@ -929,27 +991,32 @@ begin
     Key := #0;
 end;
 
+
 procedure TfrmUnSwDialog.TypeFilterChange(Sender: TObject);
 begin
   if not FLoading then
     UpdateTypeFilter();
 end;
 
+
 procedure TfrmUnSwDialog.lstUnitsDblClick(Sender: TObject);
 begin
   btnOK.Click();
 end;
+
 
 procedure TfrmUnSwDialog.lstUnitsClick(Sender: TObject);
 begin
   UpdateUnitActions();
 end;
 
+
 procedure TfrmUnSwDialog.lstUnitsData(Control: TWinControl; Index: Integer;
                                       var Data: string);
 begin
   Data  := FInputFilteredList[Index].Name;
 end;
+
 
 procedure TfrmUnSwDialog.lstUnitsDrawItem(Control: TWinControl; Index: Integer;
                                           Rect: TRect; State: TOwnerDrawState);
@@ -996,6 +1063,7 @@ begin
   end;
 end;
 
+
 procedure TfrmUnSwDialog.lstUnitsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   itemIndex: Integer;
@@ -1014,6 +1082,7 @@ begin
     end;
   end;
 end;
+
 
 procedure TfrmUnSwDialog.actReadOnlyExecute(Sender: TObject);
 var

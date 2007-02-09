@@ -29,6 +29,7 @@ type
     procedure WriteColor(const ARegistry: TRegistry; const AValue: TColor; const AName: String);
   end;
 
+
   TUnSwDialogSort     = (dsName, dsType);
 
   TUnSwDialogSettings = class(TUnSwBaseSettings)
@@ -60,6 +61,7 @@ type
     property Width:                 Integer             read FWidth                 write FWidth;
   end;
 
+
   TUnSwColorSettings  = class(TUnSwBaseSettings)
   private
     FDataModules:       TColor;
@@ -78,9 +80,22 @@ type
     property Units:           TColor  read FUnits         write FUnits;
   end;
 
+
+  TUnSwFilterSettings = class(TUnSwBaseSettings)
+  private
+    FAllowEmptyResults:   Boolean;
+  protected
+    procedure Load(const ARegistry: TRegistry); override;
+    procedure Save(const ARegistry: TRegistry); override;
+  public
+    property AllowEmptyResult:  Boolean read FAllowEmptyResults write FAllowEmptyResults;
+  end;
+
+
   TUnSwSettings       = class(TObject)
   private
     FColors:                TUnSwColorSettings;
+    FFilter:                TUnSwFilterSettings;
     FFormsDialog:           TUnSwDialogSettings;
     FUnitsDialog:           TUnSwDialogSettings;
 
@@ -95,11 +110,14 @@ type
     procedure Save();
 
     property Colors:          TUnSwColorSettings  read FColors      write FColors;
+    property Filter:          TUnSwFilterSettings read FFilter      write FFilter;
     property FormsDialog:     TUnSwDialogSettings read FFormsDialog write FFormsDialog;
     property UnitsDialog:     TUnSwDialogSettings read FUnitsDialog write FUnitsDialog;
   end;
 
+
   function Settings(): TUnSwSettings;
+
 
 implementation
 uses
@@ -126,6 +144,7 @@ begin
   Result  := AName;
 end;
 
+
 procedure TUnSwBaseSettings.ReadBoolDef(const ARegistry: TRegistry;
                                         var AValue: Boolean;
                                         const AName: String);
@@ -134,6 +153,7 @@ begin
     AValue  := ARegistry.ReadBool(GetKeyName(AName));
 end;
 
+
 procedure TUnSwBaseSettings.ReadColorDef(const ARegistry: TRegistry;
                                          var AValue: TColor;
                                          const AName: String);
@@ -141,6 +161,7 @@ begin
   if ARegistry.ValueExists(GetKeyName(AName)) then
     AValue  := TColor(ARegistry.ReadInteger(GetKeyName(AName)));
 end;
+
 
 procedure TUnSwBaseSettings.ReadIntegerDef(const ARegistry: TRegistry;
                                            var AValue: Integer;
@@ -158,12 +179,14 @@ begin
   ARegistry.WriteBool(GetKeyName(AName), AValue);
 end;
 
+
 procedure TUnSwBaseSettings.WriteColor(const ARegistry: TRegistry;
                                        const AValue: TColor;
                                        const AName: String);
 begin
   WriteInteger(ARegistry, Integer(AValue), AName);
 end;
+
 
 procedure TUnSwBaseSettings.WriteInteger(const ARegistry: TRegistry;
                                          const AValue: Integer;
@@ -183,6 +206,7 @@ begin
 
   TStringList(FMRUList).CaseSensitive := False
 end;
+
 
 destructor TUnSwDialogSettings.Destroy();
 begin
@@ -240,6 +264,7 @@ begin
   end;
 end;
 
+
 procedure TUnSwDialogSettings.Save(const ARegistry: TRegistry);
 var
   sMRU:       String;
@@ -274,6 +299,7 @@ begin
   ReadColorDef(ARegistry, FUnits,         'ColorUnits');
 end;
 
+
 procedure TUnSwColorSettings.Save(const ARegistry: TRegistry);
 begin
   WriteBool(ARegistry,    FEnabled,       'ColorEnabled');
@@ -281,6 +307,19 @@ begin
   WriteColor(ARegistry,   FForms,         'ColorForms');
   WriteColor(ARegistry,   FProjectSource, 'ColorProjectSource');
   WriteColor(ARegistry,   FUnits,         'ColorUnits');
+end;
+
+
+{ TUnSwFilterSettings }
+procedure TUnSwFilterSettings.Load(const ARegistry: TRegistry);
+begin
+  ReadBoolDef(ARegistry,  FAllowEmptyResults, 'AllowEmptyResults');
+end;
+
+
+procedure TUnSwFilterSettings.Save(const ARegistry: TRegistry);
+begin
+  WriteBool(ARegistry,    FAllowEmptyResults, 'AllowEmptyResults');
 end;
 
 
@@ -293,16 +332,20 @@ begin
                    '\UnitSwitcher';
 
   FColors       := TUnSwColorSettings.Create();
+  FFilter       := TUnSwFilterSettings.Create();
   FFormsDialog  := TUnSwDialogSettings.Create('Forms');
   FUnitsDialog  := TUnSwDialogSettings.Create('Units');
+
   ResetDefaults();
   Load();
 end;
+
 
 destructor TUnSwSettings.Destroy();
 begin
   FreeAndNil(FUnitsDialog);
   FreeAndNil(FFormsDialog);
+  FreeAndNil(FFilter);
   FreeAndNil(FColors);
 
   inherited;
@@ -310,6 +353,7 @@ end;
 
 
 procedure TUnSwSettings.ResetDefaults(const AColorsOnly: Boolean);
+
   procedure ResetDialog(const ADialog: TUnSwDialogSettings);
   begin
     ADialog.IncludeDataModules    := True;
@@ -321,6 +365,7 @@ procedure TUnSwSettings.ResetDefaults(const AColorsOnly: Boolean);
     ADialog.Height                := 425;
   end;
 
+  
 begin
   if not AColorsOnly then
   begin
@@ -328,11 +373,13 @@ begin
     ResetDialog(FUnitsDialog);
   end;
 
-  FColors.Enabled       := True;
-  FColors.DataModules   := RGB( 35, 120,  35);  // Green
-  FColors.Forms         := RGB( 50,  70, 120);  // Blue
-  FColors.ProjectSource := RGB(120, 120,  35);  // Yellow
-  FColors.Units         := RGB(150,  35,  35);  // Red
+  FColors.Enabled           := True;
+  FColors.DataModules       := RGB( 35, 120,  35);  // Green
+  FColors.Forms             := RGB( 50,  70, 120);  // Blue
+  FColors.ProjectSource     := RGB(120, 120,  35);  // Yellow
+  FColors.Units             := RGB(150,  35,  35);  // Red
+
+  FFilter.AllowEmptyResult  := False;
 end;
 
 procedure TUnSwSettings.Load();
@@ -344,17 +391,21 @@ begin
   with ideRegistry do
   try
     RootKey := HKEY_CURRENT_USER;
+
     if OpenKey(FRegistryKey, False) then
     begin
       FColors.Load(ideRegistry);
+      FFilter.Load(ideRegistry);
       FFormsDialog.Load(ideRegistry);
       FUnitsDialog.Load(ideRegistry);
+
       CloseKey();
     end;
   finally
     Free();
   end;
 end;
+
 
 procedure TUnSwSettings.Save();
 var
@@ -365,11 +416,14 @@ begin
   with ideRegistry do
   try
     RootKey := HKEY_CURRENT_USER;
+
     if OpenKey(FRegistryKey, True) then
     begin
       FColors.Save(ideRegistry);
+      FFilter.Save(ideRegistry);
       FFormsDialog.Save(ideRegistry);
       FUnitsDialog.Save(ideRegistry);
+
       CloseKey();
     end;
   finally

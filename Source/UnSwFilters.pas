@@ -23,7 +23,7 @@ type
 
     procedure FilterUnit(const AUnit: TUnSwUnit); virtual;
   public
-    constructor Create(const AList: TUnSwUnitList); virtual;
+    procedure FilterList(AList: TUnSwUnitList);
   end;
 
   TUnSwUnitSimpleFilter         = class(TUnSwUnitFilter)
@@ -55,7 +55,7 @@ type
     procedure VisitModule(const AUnit: TUnSwModuleUnit); override;
     procedure VisitProject(const AUnit: TUnSwProjectUnit); override;
   public
-    constructor Create(const AList: TUnSwUnitList); override;
+    constructor Create;
 
     property IncludeDataModules:    Boolean read FIncludeDataModules    write FIncludeDataModules;
     property IncludeForms:          Boolean read FIncludeForms          write FIncludeForms;
@@ -69,27 +69,33 @@ uses
   
 
 { TUnSwUnitFilter }
-constructor TUnSwUnitFilter.Create(const AList: TUnSwUnitList);
+procedure TUnSwUnitFilter.FilterList(AList: TUnSwUnitList);
 begin
-  inherited Create();
-
-  Assert(Assigned(AList), 'List must be assigned.');
   FList := AList;
+  try
+    FList.AcceptVisitor(Self);
+  finally
+    FList := nil;
+  end;
 end;
+
 
 procedure TUnSwUnitFilter.VisitUnit(const AUnit: TUnSwUnit);
 begin
 end;
+
 
 procedure TUnSwUnitFilter.VisitModule(const AUnit: TUnSwModuleUnit);
 begin
   VisitUnit(AUnit);
 end;
 
+
 procedure TUnSwUnitFilter.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
   VisitUnit(AUnit);
 end;
+
 
 procedure TUnSwUnitFilter.FilterUnit(const AUnit: TUnSwUnit);
 begin
@@ -123,7 +129,7 @@ end;
 
 
 { TUnSwUnitTypeFilter }
-constructor TUnSwUnitTypeFilter.Create(const AList: TUnSwUnitList);
+constructor TUnSwUnitTypeFilter.Create;
 begin
   inherited;
 
@@ -132,6 +138,7 @@ begin
   FIncludeProjectSource := True;
   FIncludeUnits         := True;
 end;
+
 
 procedure TUnSwUnitTypeFilter.VisitModule(const AUnit: TUnSwModuleUnit);
 var
@@ -152,6 +159,7 @@ begin
   if not (AUnit.UnitType in validTypes) then
     FilterUnit(AUnit);
 end;
+
 
 procedure TUnSwUnitTypeFilter.VisitProject(const AUnit: TUnSwProjectUnit);
 begin

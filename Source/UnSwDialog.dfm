@@ -1,10 +1,10 @@
 object frmUnSwDialog: TfrmUnSwDialog
   Left = 187
   Top = 83
+  Width = 320
+  Height = 425
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher'
-  ClientHeight = 398
-  ClientWidth = 312
   Color = clBtnFace
   Constraints.MinHeight = 240
   Constraints.MinWidth = 290
@@ -204,10 +204,10 @@ object frmUnSwDialog: TfrmUnSwDialog
     end
   end
   object ilsTypes: TImageList
-    Left = 16
-    Top = 264
+    Left = 28
+    Top = 228
     Bitmap = {
-      494C010106000900040010001000FFFFFFFFFF00FFFFFFFFFFFFFFFF424D3600
+      494C010106000900040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -607,11 +607,12 @@ object frmUnSwDialog: TfrmUnSwDialog
       E000E0000000AC0FE000E0000000BF3FE000E0000000FFFFE000600000001000
       E000200000001000E00000000000B000E00020000000F000E00060000000F000
       E000E0000000F000E000E0000000F000E000E0000000F000E001E0010000F000
-      E003E003FFFFF000E007E007FFFFF000}
+      E003E003FFFFF000E007E007FFFFF00000000000000000000000000000000000
+      000000000000}
   end
   object alMain: TActionList
-    Left = 44
-    Top = 264
+    Left = 84
+    Top = 228
     object actSelectAll: TAction
       Caption = 'Select &All'
       ShortCut = 16449
@@ -666,8 +667,8 @@ object frmUnSwDialog: TfrmUnSwDialog
     end
   end
   object pmnUnits: TPopupMenu
-    Left = 72
-    Top = 264
+    Left = 140
+    Top = 228
     object pmnUnitsSelectAll: TMenuItem
       Action = actSelectAll
     end
