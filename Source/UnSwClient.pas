@@ -58,11 +58,9 @@ begin
     Assert(Supports(BorlandIDEServices, IOTAModuleServices),
                     'BorlandIDEServices does not support the ' +
                     'IOTAModuleServices interface.');
-    {$IFDEF DELPHI7ORLOWER}
     Assert(Supports(BorlandIDEServices, IOTAActionServices),
                     'BorlandIDEServices does not support the ' +
                     'IOTAActionServices interface.');
-    {$ENDIF}
 
     for actionIndex := 0 to Pred(ntaServices.ActionList.ActionCount) do
     begin
@@ -174,6 +172,9 @@ var
   project:        IOTAProject;
   selectedUnits:  TUnSwUnitList;
   unitList:       TUnSwUnitList;
+  openDFM:        Boolean;
+  openType:       TUnSwActivateType;
+  fileName:       string;
 
 begin
   project := ActiveProject();
@@ -188,16 +189,27 @@ begin
       unitList.Add(TUnSwModuleUnit.Create(project.GetModule(moduleIndex)));
 
     activeUnit  := nil;
-    activeIndex := unitList.IndexOfFileName(ActiveFileName());
+    fileName    := ActiveFileName();
+
+    if SameText(ExtractFileExt(fileName), '.dfm') then
+      fileName  := ChangeFileExt(fileName, '.pas');
+
+    activeIndex := unitList.IndexOfFileName(fileName);
     if activeIndex > -1 then
       activeUnit  := unitList[activeIndex];
 
     selectedUnits := TfrmUnSwDialog.Execute(unitList, (Sender = FViewFormAction),
-                                            activeUnit);
+                                            openDFM, activeUnit);
     if Assigned(selectedUnits) then
     try
+      openType := atSource;
+      if openDFM then
+        openType := atDFM
+      else if Sender = FViewFormAction then
+        openType := atForm;
+
       for itemIndex := 0 to Pred(selectedUnits.Count) do
-        selectedUnits[itemIndex].Activate((Sender = FViewUnitAction));
+        selectedUnits[itemIndex].Activate(openType);
     finally
       FreeAndNil(selectedUnits);
     end;

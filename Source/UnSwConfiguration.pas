@@ -26,6 +26,7 @@ type
     btnOk:                                      TButton;
     btnProjectColor:                            TButton;
     btnUnitColor:                               TButton;
+    chkAllowEmptyResults:                       TCheckBox;
     chkCustomColor:                             TCheckBox;
     dlgColor:                                   TColorDialog;
     imgAbout:                                   TImage;
@@ -65,7 +66,9 @@ uses
   UnSwSettings,
   UnSwShortcuts;
 
+
 {$R *.dfm}
+
 
 { TfrmUnSwConfiguration }
 class function TfrmUnSwConfiguration.Execute(): Boolean;
@@ -73,12 +76,13 @@ begin
   with Self.Create(nil) do
   try
     pcConfiguration.ActivePage  := tsGeneral;
-    
+
     Result  := InternalExecute();
   finally
     Free();
   end;
 end;
+
 
 function TfrmUnSwConfiguration.InternalExecute(): Boolean;
 var
@@ -103,10 +107,12 @@ begin
   ShellExecute(0, 'open', 'http://projects.kamadev.net/', nil, nil, SW_SHOWNORMAL);
 end;
 
+
 procedure TfrmUnSwConfiguration.lblShortcutKeysClick(Sender: TObject);
 begin
   TfrmUnSwShortcuts.Execute();
 end;
+
 
 procedure TfrmUnSwConfiguration.LoadSettings();
 begin
@@ -115,39 +121,44 @@ begin
   lblFormColor.Font.Color       := Settings.Colors.Forms;
   lblProjectColor.Font.Color    := Settings.Colors.ProjectSource;
   lblUnitColor.Font.Color       := Settings.Colors.Units;
+  chkAllowEmptyResults.Checked  := Settings.Filter.AllowEmptyResult;
 end;
+
 
 procedure TfrmUnSwConfiguration.SaveSettings();
 begin
-  Settings.Colors.Enabled       := chkCustomColor.Checked;
-  Settings.Colors.DataModules   := lblDataModuleColor.Font.Color;
-  Settings.Colors.Forms         := lblFormColor.Font.Color;
-  Settings.Colors.ProjectSource := lblProjectColor.Font.Color;
-  Settings.Colors.Units         := lblUnitColor.Font.Color;
+  Settings.Colors.Enabled           := chkCustomColor.Checked;
+  Settings.Colors.DataModules       := lblDataModuleColor.Font.Color;
+  Settings.Colors.Forms             := lblFormColor.Font.Color;
+  Settings.Colors.ProjectSource     := lblProjectColor.Font.Color;
+  Settings.Colors.Units             := lblUnitColor.Font.Color;
+  Settings.Filter.AllowEmptyResult  := chkAllowEmptyResults.Checked;
   Settings.Save();
 end;
 
 
 procedure TfrmUnSwConfiguration.btnDefaultClick(Sender: TObject);
 begin
-  if MessageBox(Self.Handle, 'Are you sure you want to revert the color ' +
+  if MessageBox(Self.Handle, 'Are you sure you want to revert the ' +
                              'settings? This action can not be undone.',
                              'Reset to default', MB_YESNO or MB_ICONQUESTION) = ID_YES then
   begin
-    Settings.ResetDefaults(True);
+    Settings.ResetDefaults();
     Settings.Save();
     LoadSettings();
   end;
 end;
 
+
 procedure TfrmUnSwConfiguration.chkCustomColorClick(Sender: TObject);
 const
   Colors:     array[Boolean] of TColor  = (clBtnFace, clWindow);
-  
+
 begin
   pnlCustomColor.Enabled  := chkCustomColor.Checked;
   pnlCustomColor.Color    := Colors[pnlCustomColor.Enabled];
 end;
+
 
 procedure TfrmUnSwConfiguration.PickColor(Sender: TObject);
 var

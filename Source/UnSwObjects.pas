@@ -33,26 +33,19 @@ type
   end;
 
 
-  TUnSwNoRefIntfObject  = class(TPersistent, IInterface)
-  protected
-    // IInterface
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef(): Integer; stdcall;
-    function _Release(): Integer; stdcall;
-  end;
+  TUnSwActivateType     = (atForm, atSource, atDFM);
 
-
-  TUnSwUnit             = class(TUnSwNoRefIntfObject, IUnSwVisited)
+  TUnSwUnit             = class(TInterfacedPersistent, IUnSwVisited)
   protected
     function GetName(): String; virtual;
     function GetFileName(): String; virtual;
 
-    procedure OpenModule(const AModule: IOTAModule; const ASource: Boolean); virtual;
+    procedure OpenModule(const AModule: IOTAModule; const AType: TUnSwActivateType); virtual;
   public
     // IUnSwVisited
     procedure AcceptVisitor(const AVisitor: IUnSwVisitor); virtual; abstract;
 
-    procedure Activate(const ASource: Boolean); virtual; abstract;
+    procedure Activate(const AType: TUnSwActivateType); virtual; abstract;
 
     property Name:          String        read GetName;
     property FileName:      String        read GetFileName;
@@ -91,7 +84,7 @@ type
     constructor Create(const AModule: IOTAModuleInfo);
     procedure AcceptVisitor(const AVisitor: IUnSwVisitor); override;
 
-    procedure Activate(const ASource: Boolean); override;
+    procedure Activate(const AType: TUnSwActivateType); override;
 
     property FormName:      String        read GetFormName;
     property UnitType:      TUnSwUnitType read GetUnitType;
@@ -107,11 +100,11 @@ type
     constructor Create(const AProject: IOTAProject);
     procedure AcceptVisitor(const AVisitor: IUnSwVisitor); override;
 
-    procedure Activate(const ASource: Boolean); override;
+    procedure Activate(const AType: TUnSwActivateType); override;
   end;
 
 
-  TUnSwUnitList         = class(TUnSwNoRefIntfObject, IUnSwVisited)
+  TUnSwUnitList         = class(TInterfacedPersistent, IUnSwVisited)
   private
     FItems:       TObjectList;
 
@@ -151,25 +144,6 @@ uses
   SysUtils;
 
 
-{ TUnSwNoRefIntfObject }
-function TUnSwNoRefIntfObject.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  if GetInterface(IID, Obj) then
-    Result  := S_OK
-  else
-    Result  := E_NOINTERFACE;
-end;
-
-function TUnSwNoRefIntfObject._AddRef(): Integer;
-begin
-  Result  := -1;
-end;
-
-function TUnSwNoRefIntfObject._Release(): Integer;
-begin
-  Result  := -1;
-end;
-
 
 { TUnSwUnit }
 function TUnSwUnit.GetName(): String;
@@ -183,7 +157,7 @@ begin
 end;
 
 
-procedure TUnSwUnit.OpenModule(const AModule: IOTAModule; const ASource: Boolean);
+procedure TUnSwUnit.OpenModule(const AModule: IOTAModule; const AType: TUnSwActivateType);
 var
   editor:         IOTAEditor;
   formEditor:     IOTAFormEditor;
@@ -191,17 +165,19 @@ var
   moduleIndex:    Integer;
 
 begin
+  Assert(AType <> atDFM, 'atDFM can not be handled by the OpenModule method');
+
   formEditor  := nil;
   for moduleIndex := 0 to Pred(AModule.ModuleFileCount) do
   begin
     editor  := AModule.ModuleFileEditors[moduleIndex];
     isForm  := Supports(editor, IOTAFormEditor);
 
-    if (not ASource) and (isForm) and (not Assigned(formEditor)) then
+    if (AType = atForm) and isForm and (not Assigned(formEditor)) then
       formEditor  := (editor as IOTAFormEditor);
 
     if not isForm then
-      editor.Show();
+      editor.Show;
   end;
 
   if Assigned(formEditor) then
@@ -217,14 +193,33 @@ begin
   FModule := AModule;
 end;
 
-procedure TUnSwModuleUnit.Activate(const ASource: Boolean);
+procedure TUnSwModuleUnit.Activate(const AType: TUnSwActivateType);
 var
+  dfmFile:      string;
   ifModule:     IOTAModule;
+  handled:      Boolean;
 
 begin
-  ifModule  := FModule.OpenModule();
-  if Assigned(ifModule) then
-    OpenModule(ifModule, ASource);
+  handled := False;
+  
+  { Don't use OpenModule for DFM files; can't have a reference to the
+    IOTAModule or there'll be errors all over the place. }
+  if AType = atDFM then
+  begin
+    dfmFile := ChangeFileExt(FModule.FileName, '.dfm');
+    if FileExists(dfmFile) then
+    begin
+      (BorlandIDEServices as IOTAActionServices).OpenFile(dfmFile);
+      handled := True;
+    end;
+  end;
+
+  if not handled then
+  begin
+    ifModule  := FModule.OpenModule();
+    if Assigned(ifModule) then
+      OpenModule(ifModule, AType);
+  end;
 end;
 
 procedure TUnSwModuleUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
@@ -270,7 +265,7 @@ begin
   FProject  := AProject;
 end;
 
-procedure TUnSwProjectUnit.Activate(const ASource: Boolean);
+procedure TUnSwProjectUnit.Activate(const AType: TUnSwActivateType);
 {$IFDEF DELPHI7ORLOWER}
 var
   actionIndex:    Integer;

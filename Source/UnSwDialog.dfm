@@ -1,6 +1,6 @@
 object frmUnSwDialog: TfrmUnSwDialog
-  Left = 187
-  Top = 83
+  Left = 284
+  Top = 120
   Width = 320
   Height = 425
   BorderIcons = [biSystemMenu]
@@ -145,8 +145,8 @@ object frmUnSwDialog: TfrmUnSwDialog
       Anchors = [akRight, akBottom]
       Caption = 'OK'
       Default = True
-      ModalResult = 1
       TabOrder = 1
+      OnClick = btnOKClick
     end
     object btnConfiguration: TButton
       Left = 4
@@ -646,7 +646,7 @@ object frmUnSwDialog: TfrmUnSwDialog
       OnExecute = actOpenPropertiesExecute
     end
     object actOpenDFMProperties: TAction
-      Caption = '&.DFM Properties'
+      Caption = '.&DFM Properties'
       ShortCut = 24589
       OnExecute = actOpenDFMPropertiesExecute
     end
@@ -665,17 +665,36 @@ object frmUnSwDialog: TfrmUnSwDialog
       ShortCut = 49234
       OnExecute = actReadOnlyExecute
     end
+    object actOpen: TAction
+      Caption = '&Open'
+      ShortCut = 13
+      OnExecute = actOpenExecute
+    end
+    object actOpenDFM: TAction
+      Caption = 'Open D&FM'
+      ShortCut = 8205
+      OnExecute = actOpenDFMExecute
+    end
   end
   object pmnUnits: TPopupMenu
     Left = 140
     Top = 228
+    object pmnUnitsOpen: TMenuItem
+      Action = actOpen
+    end
+    object pmnUnitsOpenDFM: TMenuItem
+      Action = actOpenDFM
+    end
+    object pmnUnitsSep1: TMenuItem
+      Caption = '-'
+    end
     object pmnUnitsSelectAll: TMenuItem
       Action = actSelectAll
     end
     object pmnUnitsSelectInvert: TMenuItem
       Action = actSelectInvert
     end
-    object pmnUnitsSep1: TMenuItem
+    object pmnUnitsSep2: TMenuItem
       Caption = '-'
     end
     object pmnUnitsSortByName: TMenuItem
@@ -684,13 +703,13 @@ object frmUnSwDialog: TfrmUnSwDialog
     object pmnUnitsSortByType: TMenuItem
       Action = actSortByType
     end
-    object pmnUnitsSep2: TMenuItem
+    object pmnUnitsSep3: TMenuItem
       Caption = '-'
     end
     object pmnUnitsReadOnly: TMenuItem
       Action = actReadOnly
     end
-    object pmnUnitsSep3: TMenuItem
+    object pmnUnitsSep4: TMenuItem
       Caption = '-'
     end
     object pmnUnitsOpenFolder: TMenuItem

@@ -26,7 +26,7 @@ uses
   UnSwFilters;
 
 type
-  TUnSwStyleVisitor = class(TUnSwNoRefIntfObject, IUnSwVisitor)
+  TUnSwStyleVisitor = class(TInterfacedPersistent, IUnSwVisitor)
   private
     FColor:             TColor;
     FImageIndex:        Integer;
@@ -44,6 +44,8 @@ type
   TfrmUnSwDialog = class(TForm)
     actMRUNext:                                 TAction;
     actMRUPrior:                                TAction;
+    actOpen:                                    TAction;
+    actOpenDFM:                                 TAction;
     actOpenDFMProperties:                       TAction;
     actOpenFolder:                              TAction;
     actOpenProperties:                          TAction;
@@ -65,6 +67,8 @@ type
     lblSubFilters:                              TLabel;
     lstUnits:                                   TListBox;
     pmnUnits:                                   TPopupMenu;
+    pmnUnitsOpen:                               TMenuItem;
+    pmnUnitsOpenDFM:                            TMenuItem;
     pmnUnitsOpenDFMProperties:                  TMenuItem;
     pmnUnitsOpenFolder:                         TMenuItem;
     pmnUnitsOpenProperties:                     TMenuItem;
@@ -74,6 +78,7 @@ type
     pmnUnitsSep1:                               TMenuItem;
     pmnUnitsSep2:                               TMenuItem;
     pmnUnitsSep3:                               TMenuItem;
+    pmnUnitsSep4:                               TMenuItem;
     pmnUnitsSortByName:                         TMenuItem;
     pmnUnitsSortByType:                         TMenuItem;
     pnlButtons:                                 TPanel;
@@ -104,6 +109,9 @@ type
     procedure lstUnitsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure SortExecute(Sender: TObject);
     procedure TypeFilterChange(Sender: TObject);
+    procedure actOpenExecute(Sender: TObject);
+    procedure actOpenDFMExecute(Sender: TObject);
+    procedure btnOKClick(Sender: TObject);
   private
     FLoading:               Boolean;
     FUnitList:              TUnSwUnitList;
@@ -112,6 +120,7 @@ type
     FMRUList:               TStrings;
     FMRUIndex:              Integer;
     FSubFilters:            TStringList;
+    FOpenDFM:               Boolean;
 
     FTypeFilteredList:      TUnSwUnitList;
     FSubFilteredList:       TUnSwUnitList;
@@ -142,6 +151,7 @@ type
   public
     class function Execute(const AUnits: TUnSwUnitList;
                            const AFormsOnly: Boolean;
+                           out AOpenDFM: Boolean;
                            const AActive: TUnSwUnit = nil): TUnSwUnitList;
   end;
 
@@ -409,6 +419,7 @@ end;
 { TfrmUnSwDialog }
 class function TfrmUnSwDialog.Execute(const AUnits: TUnSwUnitList;
                                       const AFormsOnly: Boolean;
+                                      out AOpenDFM: Boolean;
                                       const AActive: TUnSwUnit): TUnSwUnitList;
 begin
   with Self.Create(nil) do
@@ -416,7 +427,9 @@ begin
     FUnitList   := AUnits;
     FActiveUnit := AActive;
     FFormsOnly  := AFormsOnly;
+
     Result      := InternalExecute();
+    AOpenDFM    := FOpenDFM;
   finally
     Free();
   end;
@@ -486,7 +499,7 @@ begin
 
           FMRUList.Insert(0, cmbSearch.Text);
         end;
-        
+
         Result  := GetActiveUnits();
       end;
 
@@ -773,6 +786,7 @@ begin
   begin
     Result              := TUnSwUnitList.Create();
     Result.OwnsObjects  := False;
+    
     for itemIndex := 0 to Pred(lstUnits.Items.Count) do
       if lstUnits.Selected[itemIndex] then
         Result.Add(FInputFilteredList[itemIndex]);
@@ -1106,6 +1120,26 @@ begin
     lstUnits.Invalidate();
     UpdateUnitActions();
   end;
+end;
+
+
+procedure TfrmUnSwDialog.actOpenExecute(Sender: TObject);
+begin
+  FOpenDFM := False;
+  ModalResult := mrOk;
+end;
+
+
+procedure TfrmUnSwDialog.actOpenDFMExecute(Sender: TObject);
+begin
+  FOpenDFM := True;
+  ModalResult := mrOk;
+end;
+
+procedure TfrmUnSwDialog.btnOKClick(Sender: TObject);
+begin
+  FOpenDFM := ((GetKeyState(VK_SHIFT) and 128) <> 0);
+  ModalResult := mrOk;
 end;
 
 end.

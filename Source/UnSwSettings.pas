@@ -91,6 +91,8 @@ type
     property AllowEmptyResult:  Boolean read FAllowEmptyResults write FAllowEmptyResults;
   end;
 
+  TUnSwResetSetting   = (rsColors, rsFilter, rsForms, rsUnits);
+  TUnSwResetSettings  = set of TUnSwResetSetting;
 
   TUnSwSettings       = class(TObject)
   private
@@ -106,7 +108,7 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    procedure ResetDefaults(const AColorsOnly: Boolean = False);
+    procedure ResetDefaults(const ASettings: TUnSwResetSettings = [rsColors, rsFilter]);
     procedure Save();
 
     property Colors:          TUnSwColorSettings  read FColors      write FColors;
@@ -352,7 +354,7 @@ begin
 end;
 
 
-procedure TUnSwSettings.ResetDefaults(const AColorsOnly: Boolean);
+procedure TUnSwSettings.ResetDefaults(const ASettings: TUnSwResetSettings);
 
   procedure ResetDialog(const ADialog: TUnSwDialogSettings);
   begin
@@ -365,21 +367,25 @@ procedure TUnSwSettings.ResetDefaults(const AColorsOnly: Boolean);
     ADialog.Height                := 425;
   end;
 
-  
+
 begin
-  if not AColorsOnly then
-  begin
+  if rsForms in ASettings then
     ResetDialog(FFormsDialog);
+
+  if rsUnits in ASettings then
     ResetDialog(FUnitsDialog);
+
+  if rsColors in ASettings then
+  begin
+    FColors.Enabled           := True;
+    FColors.DataModules       := RGB( 35, 120,  35);  // Green
+    FColors.Forms             := RGB( 50,  70, 120);  // Blue
+    FColors.ProjectSource     := RGB(120, 120,  35);  // Yellow
+    FColors.Units             := RGB(150,  35,  35);  // Red
   end;
 
-  FColors.Enabled           := True;
-  FColors.DataModules       := RGB( 35, 120,  35);  // Green
-  FColors.Forms             := RGB( 50,  70, 120);  // Blue
-  FColors.ProjectSource     := RGB(120, 120,  35);  // Yellow
-  FColors.Units             := RGB(150,  35,  35);  // Red
-
-  FFilter.AllowEmptyResult  := False;
+  if rsFilter in ASettings then
+    FFilter.AllowEmptyResult  := False;
 end;
 
 procedure TUnSwSettings.Load();

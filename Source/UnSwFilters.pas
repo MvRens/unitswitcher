@@ -8,10 +8,12 @@ unit UnSwFilters;
 
 interface
 uses
+  Classes,
+  
   UnSwObjects;
 
 type
-  TUnSwUnitFilter               = class(TUnSwNoRefIntfObject, IUnSwVisitor)
+  TUnSwUnitFilter               = class(TInterfacedPersistent, IUnSwVisitor)
   private
     FList:      TUnSwUnitList;
   protected

@@ -4,7 +4,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'UnitSwitcher Configuration'
-  ClientHeight = 250
+  ClientHeight = 272
   ClientWidth = 303
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,14 +16,14 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   Position = poScreenCenter
   DesignSize = (
     303
-    250)
+    272)
   PixelsPerInch = 96
   TextHeight = 13
   object pcConfiguration: TPageControl
     Left = 4
     Top = 4
     Width = 295
-    Height = 209
+    Height = 231
     ActivePage = tsGeneral
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
@@ -204,12 +204,20 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       end
       object btnDefault: TButton
         Left = 8
-        Top = 135
+        Top = 167
         Width = 109
         Height = 25
         Caption = 'Reset to &default'
         TabOrder = 2
         OnClick = btnDefaultClick
+      end
+      object chkAllowEmptyResults: TCheckBox
+        Left = 8
+        Top = 136
+        Width = 273
+        Height = 17
+        Caption = 'Allow &empty results'
+        TabOrder = 3
       end
     end
     object tsAbout: TTabSheet
@@ -217,7 +225,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       ImageIndex = 1
       DesignSize = (
         287
-        181)
+        203)
       object imgAbout: TImage
         Left = 8
         Top = 8
@@ -275,7 +283,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Top = 23
         Width = 145
         Height = 13
-        Anchors = [akLeft, akBottom]
+        Anchors = [akTop, akRight]
         Caption = 'Copyright '#169' 2006 X'#178'Software'
       end
       object TLabel
@@ -283,7 +291,6 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Top = 90
         Width = 225
         Height = 41
-        Anchors = [akLeft, akRight, akBottom]
         AutoSize = False
         Caption = 
           'UnitSwitcher is released as open-source under the zlib/libpng OS' +
@@ -304,10 +311,11 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       end
       object lblBugReport: TLabel
         Left = 56
-        Top = 156
+        Top = 177
         Width = 75
         Height = 13
         Cursor = crHandPoint
+        Anchors = [akLeft, akBottom]
         Caption = 'Report a bug...'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clBlue
@@ -319,10 +327,11 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       end
       object lblShortcutKeys: TLabel
         Left = 56
-        Top = 141
+        Top = 162
         Width = 127
         Height = 13
         Cursor = crHandPoint
+        Anchors = [akLeft, akBottom]
         Caption = 'Overview of shortcut keys'
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clBlue
@@ -336,7 +345,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   end
   object btnCancel: TButton
     Left = 224
-    Top = 219
+    Top = 241
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -347,7 +356,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   end
   object btnOk: TButton
     Left = 143
-    Top = 219
+    Top = 241
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
