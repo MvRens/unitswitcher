@@ -41,6 +41,12 @@ contains
   UnSwFilters in '..\..\Source\UnSwFilters.pas',
   UnSwSettings in '..\..\Source\UnSwSettings.pas',
   UnSwConfiguration in '..\..\Source\UnSwConfiguration.pas' {frmUnSwConfiguration},
-  UnSwShortcuts in '..\..\Source\UnSwShortcuts.pas' {frmUnSwShortcuts};
+  UnSwShortcuts in '..\..\Source\UnSwShortcuts.pas' {frmUnSwShortcuts},
+  CmpSwClient in '..\..\Source\CmpSwClient.pas',
+  BaseSwClient in '..\..\Source\BaseSwClient.pas',
+  UnSwReg in '..\..\Source\UnSwReg.pas',
+  BaseSwObjects in '..\..\Source\BaseSwObjects.pas',
+  BaseSwFilters in '..\..\Source\BaseSwFilters.pas',
+  BaseSwDialog in '..\..\Source\BaseSwDialog.pas' {frmBaseSwDialog};
 
 end.

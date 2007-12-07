@@ -1,12 +1,10 @@
-{: Connects UnitSwitcher to the IDE.
+{: Connects ComponentSwitcher to the IDE.
 
    Last changed:    $Date$
    Revision:        $Rev$
    Author:          $Author$
 }
-unit UnSwClient;
-
-{$I BaseSwDefines.inc}
+unit CmpSwClient;
 
 interface
 uses
@@ -16,22 +14,20 @@ uses
   SysUtils,
   ToolsAPI,
 
-  BaseSwClient,
-  UnSwDialog,
-  UnSwObjects;
+  BaseSwClient;
 
-
+  
 type
-  TUnitSwitcherHook = class(TBaseSwitcherHook)
-  private
-    FViewFormAction:    TContainedAction;
-    FViewUnitAction:    TContainedAction;
+  TComponentSwitcherHook = class(TBaseSwitcherHook)
   protected
-    function ActiveFileName(): String;
-    {$IFDEF DELPHI7ORLOWER}
-    function ActiveGroup(): IOTAProjectGroup;
-    {$ENDIF}
-    function ActiveProject(): IOTAProject;
+    function ActiveModule(): IOTAModule;
+    function ActiveEditor(): IOTAEditor;
+
+//    function ActiveFileName(): String;
+//    {$IFDEF DELPHI7ORLOWER}
+//    function ActiveGroup(): IOTAProjectGroup;
+//    {$ENDIF}
+//    function ActiveProject(): IOTAProject;
 
     procedure NewExecute(Sender: TObject); virtual;
   public
@@ -42,34 +38,21 @@ type
 implementation
 
 
-{ TUnitSwitcherHook}
-constructor TUnitSwitcherHook.Create();
+{ TComponentSwitcherHook}
+constructor TComponentSwitcherHook.Create();
 begin
   inherited;
-  
-  try
-    {
-    Assert(Assigned(BorlandIDEServices), 'BorlandIDEServices not available.');
-    Assert(Supports(BorlandIDEServices, INTAServices, ntaServices),
-                    'BorlandIDEServices does not support the ' +
-                    'INTAServices interface.');
-    Assert(Supports(BorlandIDEServices, IOTAModuleServices),
-                    'BorlandIDEServices does not support the ' +
-                    'IOTAModuleServices interface.');
-    Assert(Supports(BorlandIDEServices, IOTAActionServices),
-                    'BorlandIDEServices does not support the ' +
-                    'IOTAActionServices interface.');
-    }
 
-    FViewFormAction := HookIDEAction('ViewFormCommand', NewExecute);
-    FViewUnitAction := HookIDEAction('ViewUnitCommand', NewExecute);
+  try
+    HookIDEAction('SearchFindCommand', NewExecute);
   except
     on E:EAssertionFailed do
-      ShowMessage('Error while loading UnitSwitcher: ' + E.Message);
+      ShowMessage('Error while loading ComponentSwitcher: ' + E.Message);
   end;
 end;
 
 
+(*
 function TUnitSwitcherHook.ActiveFileName(): String;
 var
   module:     IOTAModule;
@@ -186,6 +169,45 @@ begin
   finally
     FreeAndNil(unitList);
   end;
+end;
+*)
+
+
+
+function TComponentSwitcherHook.ActiveModule(): IOTAModule;
+begin
+  Result := (BorlandIDEServices as IOTAModuleServices).CurrentModule;
+end;
+
+
+function TComponentSwitcherHook.ActiveEditor(): IOTAEditor;
+var
+  module:   IOTAModule;
+
+begin
+  Result  := nil;
+  module  := ActiveModule();
+
+  if Assigned(module) then
+    Result  := activeModule.CurrentEditor;
+end;
+
+
+procedure TComponentSwitcherHook.NewExecute(Sender: TObject);
+var
+  editor:     IOTAEditor;
+  formEditor: IOTAFormEditor;
+  name:       String;
+
+begin
+  editor  := ActiveEditor();
+  if Supports(editor, IOTAFormEditor, formEditor) then
+  begin
+    name := '';
+    formEditor.GetRootComponent.GetPropValueByName('Name', name);
+    ShowMessage(name);
+  end else
+    OldActionExecute(Sender);
 end;
 
 end.

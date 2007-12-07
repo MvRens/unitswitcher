@@ -6,48 +6,41 @@
 }
 unit UnSwObjects;
 
-{$I UnSwDefines.inc}
+{$I BaseSwDefines.inc}
 
 interface
 uses
   Classes,
   Contnrs,
-  ToolsAPI;
+  ToolsAPI,
+
+  BaseSwObjects;
+
 
 type
   // Forward declarations
   TUnSwUnit             = class;
   TUnSwModuleUnit       = class;
   TUnSwProjectUnit      = class;
-  
 
-  IUnSwVisitor          = interface
+
+  IUnSwVisitor          = interface(IBaseSwVisitor)
     ['{A822C25B-5D0F-462F-94DD-47CD6235D79F}']
     procedure VisitModule(const AUnit: TUnSwModuleUnit);
     procedure VisitProject(const AUnit: TUnSwProjectUnit);
   end;
 
-  IUnSwVisited          = interface
-    ['{9540671E-184B-4DB6-A015-27B457C74C6C}']
-    procedure AcceptVisitor(const AVisitor: IUnSwVisitor);
-  end;
-
 
   TUnSwActivateType     = (atForm, atSource, atDFM);
 
-  TUnSwUnit             = class(TInterfacedPersistent, IUnSwVisited)
+  TUnSwUnit             = class(TBaseSwItem)
   protected
-    function GetName(): String; virtual;
     function GetFileName(): String; virtual;
 
     procedure OpenModule(const AModule: IOTAModule; const AType: TUnSwActivateType); virtual;
   public
-    // IUnSwVisited
-    procedure AcceptVisitor(const AVisitor: IUnSwVisitor); virtual; abstract;
-
     procedure Activate(const AType: TUnSwActivateType); virtual; abstract;
 
-    property Name:          String        read GetName;
     property FileName:      String        read GetFileName;
   end;
 
@@ -82,13 +75,15 @@ type
     function GetUnitType(): TUnSwUnitType;
   public
     constructor Create(const AModule: IOTAModuleInfo);
-    procedure AcceptVisitor(const AVisitor: IUnSwVisitor); override;
+    
+    procedure AcceptVisitor(const AVisitor: IBaseSwVisitor); override;
 
     procedure Activate(const AType: TUnSwActivateType); override;
 
     property FormName:      String        read GetFormName;
     property UnitType:      TUnSwUnitType read GetUnitType;
   end;
+
 
   TUnSwProjectUnit      = class(TUnSwUnit)
   private
@@ -98,43 +93,24 @@ type
     function GetFileName(): String; override;
   public
     constructor Create(const AProject: IOTAProject);
-    procedure AcceptVisitor(const AVisitor: IUnSwVisitor); override;
+    
+    procedure AcceptVisitor(const AVisitor: IBaseSwVisitor); override;
 
     procedure Activate(const AType: TUnSwActivateType); override;
   end;
 
 
-  TUnSwUnitList         = class(TInterfacedPersistent, IUnSwVisited)
-  private
-    FItems:       TObjectList;
-
-    function GetOwnsObjects(): Boolean;
-    procedure SetOwnsObjects(const Value: Boolean);
-
-    function GetCount(): Integer;
+  TUnSwUnitList         = class(TBaseSwItemList)
+  protected
     function GetItem(Index: Integer): TUnSwUnit;
     procedure SetItem(Index: Integer; Value: TUnSwUnit);
   public
-    constructor Create();
-    destructor Destroy(); override;
-
-    function Add(const AUnit: TUnSwUnit): Integer; virtual;
-    function IndexOf(const AUnit: TUnSwUnit): Integer;
     function IndexOfFileName(const AFileName: String): Integer;
-    procedure Delete(const AIndex: Integer);
-    function Remove(const AUnit: TUnSwUnit): Integer;
 
-    procedure Sort(Compare: TListSortCompare);
-    procedure Clone(const ASource: TUnSwUnitList); virtual;
-
-    procedure AcceptVisitor(const AVisitor: IUnSwVisitor);
-
-    property Count:                 Integer   read GetCount;
     property Items[Index: Integer]: TUnSwUnit read GetItem
                                               write SetItem; default;
-    property OwnsObjects:           Boolean   read GetOwnsObjects
-                                              write SetOwnsObjects;
   end;
+
 
 implementation
 uses
@@ -146,11 +122,6 @@ uses
 
 
 { TUnSwUnit }
-function TUnSwUnit.GetName(): String;
-begin
-  Result  := '';
-end;
-
 function TUnSwUnit.GetFileName(): String;
 begin
   Result  := '';
@@ -193,6 +164,7 @@ begin
   FModule := AModule;
 end;
 
+
 procedure TUnSwModuleUnit.Activate(const AType: TUnSwActivateType);
 var
   dfmFile:      string;
@@ -222,25 +194,36 @@ begin
   end;
 end;
 
-procedure TUnSwModuleUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
+
+procedure TUnSwModuleUnit.AcceptVisitor(const AVisitor: IBaseSwVisitor);
+var
+  unitVisitor:  IUnSwVisitor;
+
 begin
-  AVisitor.VisitModule(Self);
+  if Supports(AVisitor, IUnSwVisitor, unitVisitor) then
+    unitVisitor.VisitModule(Self)
+  else
+    inherited;
 end;
+
 
 function TUnSwModuleUnit.GetName(): String;
 begin
   Result  := FModule.Name;
 end;
 
+
 function TUnSwModuleUnit.GetFormName(): String;
 begin
   Result  := FModule.FormName;
 end;
 
+
 function TUnSwModuleUnit.GetFileName(): String;
 begin
   Result  := FModule.FileName;
 end;
+
 
 function TUnSwModuleUnit.GetUnitType(): TUnSwUnitType;
 begin
@@ -264,6 +247,7 @@ begin
 
   FProject  := AProject;
 end;
+
 
 procedure TUnSwProjectUnit.Activate(const AType: TUnSwActivateType);
 {$IFDEF DELPHI7ORLOWER}
@@ -292,15 +276,24 @@ begin
   {$ENDIF}
 end;
 
-procedure TUnSwProjectUnit.AcceptVisitor(const AVisitor: IUnSwVisitor);
+
+procedure TUnSwProjectUnit.AcceptVisitor(const AVisitor: IBaseSwVisitor);
+var
+  unitVisitor:  IUnSwVisitor;
+
 begin
-  AVisitor.VisitProject(Self);
+  if Supports(AVisitor, IUnSwVisitor, unitVisitor) then
+    unitVisitor.VisitProject(Self)
+  else
+    inherited;
 end;
+
 
 function TUnSwProjectUnit.GetName(): String;
 begin
   Result  := ChangeFileExt(ExtractFileName(FProject.FileName), '');
 end;
+
 
 function TUnSwProjectUnit.GetFileName(): String;
 begin
@@ -309,41 +302,6 @@ end;
 
 
 { TUnSwUnitList}
-constructor TUnSwUnitList.Create();
-begin
-  inherited Create();
-
-  FItems  := TObjectList.Create(True);
-end;
-
-
-destructor TUnSwUnitList.Destroy();
-begin
-  FreeAndNil(FItems);
-
-  inherited;
-end;
-
-
-procedure TUnSwUnitList.AcceptVisitor(const AVisitor: IUnSwVisitor);
-var
-  itemIndex:    Integer;
-
-begin
-  for itemIndex := Pred(Count) downto 0 do
-    Items[itemIndex].AcceptVisitor(AVisitor);
-end;
-
-function TUnSwUnitList.Add(const AUnit: TUnSwUnit): Integer;
-begin
-  Result  := FItems.Add(AUnit);
-end;
-
-function TUnSwUnitList.IndexOf(const AUnit: TUnSwUnit): Integer;
-begin
-  Result  := FItems.IndexOf(AUnit);
-end;
-
 function TUnSwUnitList.IndexOfFileName(const AFileName: String): Integer;
 var
   itemIndex:    Integer;
@@ -361,57 +319,16 @@ begin
     end;
 end;
 
-procedure TUnSwUnitList.Delete(const AIndex: Integer);
-begin
-  FItems.Delete(AIndex);
-end;
-
-function TUnSwUnitList.Remove(const AUnit: TUnSwUnit): Integer;
-begin
-  Result  := FItems.Remove(AUnit);
-end;
-
-procedure TUnSwUnitList.Sort(Compare: TListSortCompare);
-begin
-  FItems.Sort(Compare);
-end;
-
-procedure TUnSwUnitList.Clone(const ASource: TUnSwUnitList);
-var
-  itemIndex:      Integer;
-
-begin
-  FItems.Clear();
-  FItems.OwnsObjects  := False;
-
-  for itemIndex := 0 to Pred(ASource.Count) do
-    FItems.Add(ASource[itemIndex]);
-end;
-
-
-function TUnSwUnitList.GetCount(): Integer;
-begin
-  Result  := FItems.Count;
-end;
 
 function TUnSwUnitList.GetItem(Index: Integer): TUnSwUnit;
 begin
-  Result  := TUnSwUnit(FItems[Index]);
+  Result  := TUnSwUnit(inherited GetItem(Index));
 end;
+
 
 procedure TUnSwUnitList.SetItem(Index: Integer; Value: TUnSwUnit);
 begin
-  FItems[Index] := Value;
-end;
-
-function TUnSwUnitList.GetOwnsObjects(): Boolean;
-begin
-  Result  := FItems.OwnsObjects;
-end;
-
-procedure TUnSwUnitList.SetOwnsObjects(const Value: Boolean);
-begin
-  FItems.OwnsObjects  := Value;
+  inherited SetItem(Index, Value);
 end;
 
 end.

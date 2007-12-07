@@ -9,53 +9,29 @@ unit UnSwFilters;
 interface
 uses
   Classes,
-  
+
+  BaseSwFilters,
+  BaseSwObjects,
   UnSwObjects;
 
+
 type
-  TUnSwUnitFilter               = class(TInterfacedPersistent, IUnSwVisitor)
-  private
-    FList:      TUnSwUnitList;
+  TUnSwUnitSimpleFormNameFilter = class(TBaseSwItemSimpleNameFilter, IUnSwVisitor)
   protected
-    // Called by default by all other Visit methods
-    procedure VisitUnit(const AUnit: TUnSwUnit); virtual;
-
-    procedure VisitModule(const AUnit: TUnSwModuleUnit); virtual;
-    procedure VisitProject(const AUnit: TUnSwProjectUnit); virtual;
-
-    procedure FilterUnit(const AUnit: TUnSwUnit); virtual;
-  public
-    procedure FilterList(AList: TUnSwUnitList);
+    procedure VisitModule(const AUnit: TUnSwModuleUnit);
+    procedure VisitProject(const AUnit: TUnSwProjectUnit);
   end;
 
-  TUnSwUnitSimpleFilter         = class(TUnSwUnitFilter)
-  private
-    FFilter:      String;
 
-    procedure SetFilter(const Value: String);
-  public
-    property Filter:      String  read FFilter  write SetFilter;
-  end;
-
-  TUnSwUnitSimpleNameFilter     = class(TUnSwUnitSimpleFilter)
-  protected
-    procedure VisitUnit(const AUnit: TUnSwUnit); override;
-  end;
-
-  TUnSwUnitSimpleFormNameFilter = class(TUnSwUnitSimpleNameFilter)
-  protected
-    procedure VisitModule(const AUnit: TUnSwModuleUnit); override;
-  end;
-
-  TUnSwUnitTypeFilter           = class(TUnSwUnitFilter)
+  TUnSwUnitTypeFilter           = class(TBaseSwItemFilter)
   private
     FIncludeDataModules:    Boolean;
     FIncludeForms:          Boolean;
     FIncludeProjectSource:  Boolean;
     FIncludeUnits:          Boolean;
   protected
-    procedure VisitModule(const AUnit: TUnSwModuleUnit); override;
-    procedure VisitProject(const AUnit: TUnSwProjectUnit); override;
+    procedure VisitModule(const AUnit: TUnSwModuleUnit);
+    procedure VisitProject(const AUnit: TUnSwProjectUnit);
   public
     constructor Create;
 
@@ -65,60 +41,10 @@ type
     property IncludeUnits:          Boolean read FIncludeUnits          write FIncludeUnits;
   end;
 
+  
 implementation
 uses
   SysUtils;
-  
-
-{ TUnSwUnitFilter }
-procedure TUnSwUnitFilter.FilterList(AList: TUnSwUnitList);
-begin
-  FList := AList;
-  try
-    FList.AcceptVisitor(Self);
-  finally
-    FList := nil;
-  end;
-end;
-
-
-procedure TUnSwUnitFilter.VisitUnit(const AUnit: TUnSwUnit);
-begin
-end;
-
-
-procedure TUnSwUnitFilter.VisitModule(const AUnit: TUnSwModuleUnit);
-begin
-  VisitUnit(AUnit);
-end;
-
-
-procedure TUnSwUnitFilter.VisitProject(const AUnit: TUnSwProjectUnit);
-begin
-  VisitUnit(AUnit);
-end;
-
-
-procedure TUnSwUnitFilter.FilterUnit(const AUnit: TUnSwUnit);
-begin
-  FList.Remove(AUnit);
-end;
-
-
-{ TUnSwUnitSimpleFilter }
-procedure TUnSwUnitSimpleFilter.SetFilter(const Value: String);
-begin
-  FFilter := LowerCase(Value);
-end;
-
-
-{ TUnSwUnitSimpleNameFilter }
-procedure TUnSwUnitSimpleNameFilter.VisitUnit(const AUnit: TUnSwUnit);
-begin
-  if (Length(Filter) > 0) and
-     (AnsiPos(Filter, LowerCase(AUnit.Name)) = 0) then
-    FilterUnit(AUnit);
-end;
 
 
 { TUnSwUnitSimpleFormNameFilter }
@@ -126,7 +52,13 @@ procedure TUnSwUnitSimpleFormNameFilter.VisitModule(const AUnit: TUnSwModuleUnit
 begin
   if (Length(Filter) > 0) and
      (AnsiPos(Filter, LowerCase(AUnit.FormName)) = 0) then
-    FilterUnit(AUnit);
+    FilterItem(AUnit);
+end;
+
+
+procedure TUnSwUnitSimpleFormNameFilter.VisitProject(const AUnit: TUnSwProjectUnit);
+begin
+  VisitItem(AUnit);
 end;
 
 
@@ -159,14 +91,14 @@ begin
     Include(validTypes, swutUnit);
 
   if not (AUnit.UnitType in validTypes) then
-    FilterUnit(AUnit);
+    FilterItem(AUnit);
 end;
 
 
 procedure TUnSwUnitTypeFilter.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
   if not FIncludeProjectSource then
-    FilterUnit(AUnit);
+    FilterItem(AUnit);
 end;
 
 end.
