@@ -22,135 +22,87 @@ uses
   StdCtrls,
   Windows,
 
+  BaseSwDialog,
   BaseSwFilters,
   BaseSwObjects,
   UnSwObjects,
   UnSwFilters;
 
 type
-  TUnSwStyleVisitor = class(TInterfacedPersistent, IBaseSwVisitor, IUnSwVisitor)
-  private
-    FColor:             TColor;
-    FImageIndex:        Integer;
-    FOverlayIndex:      Integer;
+  TUnSwStyleVisitor = class(TBaseSwStyleVisitor, IBaseSwVisitor, IUnSwVisitor)
   protected
-    procedure VisitItem(const AItem: TBaseSwItem);
-    procedure VisitModule(const AUnit: TUnSwModuleUnit);
-    procedure VisitProject(const AUnit: TUnSwProjectUnit);
-  public
-    property Color:           TColor  read FColor;
-    property ImageIndex:      Integer read FImageIndex;
-    property OverlayIndex:    Integer read FOverlayIndex;
+    procedure VisitItem(const AItem: TBaseSwItem); override;
+    procedure VisitModule(const AUnit: TUnSwModuleUnit); virtual;
+    procedure VisitProject(const AUnit: TUnSwProjectUnit); virtual;
   end;
 
 
-  TfrmUnSwDialog = class(TForm)
-    actMRUNext:                                 TAction;
-    actMRUPrior:                                TAction;
+  TfrmUnSwDialog = class(TfrmBaseSwDialog)
     actOpen:                                    TAction;
     actOpenDFM:                                 TAction;
     actOpenDFMProperties:                       TAction;
     actOpenFolder:                              TAction;
     actOpenProperties:                          TAction;
     actReadOnly:                                TAction;
-    actSelectAll:                               TAction;
-    actSelectInvert:                            TAction;
     actSortByName:                              TAction;
     actSortByType:                              TAction;
-    alMain:                                     TActionList;
-    btnCancel:                                  TButton;
-    btnConfiguration:                           TButton;
-    btnOK:                                      TButton;
     chkDataModules:                             TCheckBox;
     chkForms:                                   TCheckBox;
     chkProjectSource:                           TCheckBox;
     chkUnits:                                   TCheckBox;
-    cmbSearch:                                  TComboBox;
-    ilsTypes:                                   TImageList;
-    lblSubFilters:                              TLabel;
-    lstUnits:                                   TListBox;
-    pmnUnits:                                   TPopupMenu;
-    pmnUnitsOpen:                               TMenuItem;
-    pmnUnitsOpenDFM:                            TMenuItem;
-    pmnUnitsOpenDFMProperties:                  TMenuItem;
-    pmnUnitsOpenFolder:                         TMenuItem;
-    pmnUnitsOpenProperties:                     TMenuItem;
-    pmnUnitsReadOnly:                           TMenuItem;
-    pmnUnitsSelectAll:                          TMenuItem;
-    pmnUnitsSelectInvert:                       TMenuItem;
-    pmnUnitsSep1:                               TMenuItem;
-    pmnUnitsSep2:                               TMenuItem;
-    pmnUnitsSep3:                               TMenuItem;
-    pmnUnitsSep4:                               TMenuItem;
-    pmnUnitsSortByName:                         TMenuItem;
-    pmnUnitsSortByType:                         TMenuItem;
-    pnlButtons:                                 TPanel;
+    pmnItemsOpen:                               TMenuItem;
+    pmnItemsOpenDFM:                            TMenuItem;
+    pmnItemsOpenDFMProperties:                  TMenuItem;
+    pmnItemsOpenFolder:                         TMenuItem;
+    pmnItemsOpenProperties:                     TMenuItem;
+    pmnItemsReadOnly:                           TMenuItem;
+    pmnItemsSep1:                               TMenuItem;
+    pmnItemsSep2:                               TMenuItem;
+    pmnItemsSep3:                               TMenuItem;
+    pmnItemsSep4:                               TMenuItem;
+    pmnItemsSortByName:                         TMenuItem;
+    pmnItemsSortByType:                         TMenuItem;
     pnlIncludeTypes:                            TPanel;
-    pnlMain:                                    TPanel;
-    pnlSearch:                                  TPanel;
-    pnlSubFilters:                              TPanel;
-    sbStatus:                                   TStatusBar;
 
-    procedure actMRUNextExecute(Sender: TObject);
-    procedure actMRUPriorExecute(Sender: TObject);
     procedure actOpenDFMPropertiesExecute(Sender: TObject);
     procedure actOpenFolderExecute(Sender: TObject);
     procedure actOpenPropertiesExecute(Sender: TObject);
     procedure actReadOnlyExecute(Sender: TObject);
-    procedure actSelectAllExecute(Sender: TObject);
-    procedure actSelectInvertExecute(Sender: TObject);
-    procedure btnConfigurationClick(Sender: TObject);
-    procedure cmbSearchChange(Sender: TObject);
-    procedure cmbSearchKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure cmbSearchKeyPress(Sender: TObject; var Key: Char);
-    procedure FormResize(Sender: TObject);
-    procedure FormShow(Sender: TObject);
-    procedure lstUnitsClick(Sender: TObject);
-    procedure lstUnitsData(Control: TWinControl; Index: Integer; var Data: string);
+    procedure btnConfigurationClick(Sender: TObject);                   
     procedure lstUnitsDblClick(Sender: TObject);
-    procedure lstUnitsDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
-    procedure lstUnitsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure SortExecute(Sender: TObject);
     procedure TypeFilterChange(Sender: TObject);
     procedure actOpenExecute(Sender: TObject);
     procedure actOpenDFMExecute(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     FLoading:               Boolean;
-    FUnitList:              TUnSwUnitList;
-    FActiveUnit:            TUnSwUnit;
     FFormsOnly:             Boolean;
-    FMRUList:               TStrings;
-    FMRUIndex:              Integer;
-    FSubFilters:            TStringList;
     FOpenDFM:               Boolean;
 
     FTypeFilteredList:      TUnSwUnitList;
-    FSubFilteredList:       TUnSwUnitList;
-    FInputFilteredList:     TUnSwUnitList;
-
     FTypeFilter:            TUnSwUnitTypeFilter;
-    FSubFilter:             TBaseSwItemSimpleFilter;
-    FInputFilter:           TBaseSwItemSimpleFilter;
-    FLastFilter:            String;
+  protected
+    function InternalExecute(): TBaseSwItemList; override;
+    procedure UpdateTypeFilter(AUpdateList: Boolean);
 
-    FStyleVisitor:          TUnSwStyleVisitor;
+    function CreateItemList(): TBaseSwItemList; override;
+    function CreateInputFilter(): TBaseSwItemSimpleFilter; override;
+    function CreateStyleVisitor(): TBaseSwStyleVisitor; override;
 
-    function InternalExecute(): TUnSwUnitList;
-    procedure UpdateTypeFilter();
-    procedure UpdateList();
+    function AllowEmptyResult(): Boolean; override;
+    function ColorsEnabled(): Boolean; override;
+
+    function GetBaseItemList(): TBaseSwItemList; override;
+    function GetItemDisplayName(const AItem: TBaseSwItem): String; override;
+
+    procedure UpdateItemActions(); override;
 
     function GetActiveUnits(): TUnSwUnitList;
-    procedure SelectMRUItem();
 
-    function PushFilter(const AFilter: String): Boolean;
-    procedure PopFilter();
-    procedure UpdateSubFilters();
-
-    procedure LoadSettings();
-    procedure SaveSettings();
-
-    procedure UpdateUnitActions();
+    procedure LoadSettings(); override;
+    procedure SaveSettings(); override;
   public
     class function Execute(const AUnits: TUnSwUnitList;
                            const AFormsOnly: Boolean;
@@ -391,9 +343,9 @@ end;
 procedure TUnSwStyleVisitor.VisitItem(const AItem: TBaseSwItem);
 begin
   if (AItem is TUnSwUnit) and IsReadOnly(TUnSwUnit(AItem).FileName) then
-    FOverlayIndex := 5
+    OverlayIndex  := 5
   else
-    FOverlayIndex := -1;
+    OverlayIndex  := -1;
 end;
 
 
@@ -403,22 +355,22 @@ begin
   case AUnit.UnitType of
     swutUnit:
       begin
-        FColor      := Settings.Colors.Units;
-        FImageIndex := 1;
+        Color       := Settings.Colors.Units;
+        ImageIndex  := 1;
       end;
     swutForm:
       begin
-        FColor      := Settings.Colors.Forms;
-        FImageIndex := 2;
+        Color       := Settings.Colors.Forms;
+        ImageIndex  := 2;
       end;
     swutDataModule:
       begin
-        FColor      := Settings.Colors.DataModules;
-        FImageIndex := 3;
-      end
+        Color       := Settings.Colors.DataModules;
+        ImageIndex  := 3;
+      end;
   else
-    FColor      := clWindowText;
-    FImageIndex := 0;
+    Color       := clWindowText;
+    ImageIndex  := 0;
   end;
 end;
 
@@ -426,8 +378,8 @@ end;
 procedure TUnSwStyleVisitor.VisitProject(const AUnit: TUnSwProjectUnit);
 begin
   VisitItem(AUnit);
-  FColor        := Settings.Colors.ProjectSource;
-  FImageIndex   := 4;
+  Color       := Settings.Colors.ProjectSource;
+  ImageIndex  := 4;
 end;
 
 
@@ -439,11 +391,11 @@ class function TfrmUnSwDialog.Execute(const AUnits: TUnSwUnitList;
 begin
   with Self.Create(nil) do
   try
-    FUnitList   := AUnits;
-    FActiveUnit := AActive;
+    ItemList    := AUnits;
+    ActiveItem  := AActive;
     FFormsOnly  := AFormsOnly;
 
-    Result      := InternalExecute();
+    Result      := TUnSwUnitList(InternalExecute());
     AOpenDFM    := FOpenDFM;
   finally
     Free();
@@ -451,48 +403,39 @@ begin
 end;
 
 
-procedure TfrmUnSwDialog.FormResize(Sender: TObject);
-begin
-  lstUnits.Invalidate();
-end;
-
-
 procedure TfrmUnSwDialog.FormShow(Sender: TObject);
 begin
-  // Setting ListBox.Selected[x] won't work before OnShow...
-  UpdateTypeFilter();
+  UpdateTypeFilter(False);
+  inherited;
 end;
 
 
-function TfrmUnSwDialog.InternalExecute(): TUnSwUnitList;
-type
-  TBaseSwItemSimpleFilterClass  = class of TBaseSwItemSimpleFilter;
-
-var
-  iIndex:           Integer;
-  pClass:           TBaseSwItemSimpleFilterClass;
-  mruText:          String;
-  subFilterIndex:   Integer;
-
+function TfrmUnSwDialog.GetActiveUnits(): TUnSwUnitList;
 begin
-  Result              := nil;
-  FSubFilters         := TStringList.Create();
-  FTypeFilteredList   := TUnSwUnitList.Create();
-  FSubFilteredList    := TUnSwUnitList.Create();
-  FInputFilteredList  := TUnSwUnitList.Create();
-  FTypeFilter         := TUnSwUnitTypeFilter.Create;
+  Result  := (GetActiveItems() as TUnSwUnitList);
+end;
 
-  if FFormsOnly then
-    pClass            := TUnSwUnitSimpleFormNameFilter
+
+function TfrmUnSwDialog.GetBaseItemList(): TBaseSwItemList;
+begin
+  Result  := FTypeFilteredList;
+end;
+
+
+function TfrmUnSwDialog.GetItemDisplayName(const AItem: TBaseSwItem): String;
+begin
+  if FFormsOnly and (AItem is TUnSwModuleUnit) then
+    Result  := TUnSwModuleUnit(AItem).FormName
   else
-    pClass            := TBaseSwItemSimpleNameFilter;
+    Result  := inherited GetItemDisplayName(AItem);
+end;
 
-  FSubFilter          := pClass.Create;
-  FInputFilter        := pClass.Create;
 
+function TfrmUnSwDialog.InternalExecute(): TBaseSwItemList;
+begin
+  FTypeFilteredList   := TUnSwUnitList.Create();
+  FTypeFilter         := TUnSwUnitTypeFilter.Create;
   try
-    LoadSettings();
-
     if FFormsOnly then
     begin
       chkProjectSource.Visible  := False;
@@ -501,46 +444,15 @@ begin
     end else
       Self.Caption              := 'UnitSwitcher - View Unit';
 
-    FStyleVisitor := TUnSwStyleVisitor.Create();
-    try
-      if Self.ShowModal() = mrOk then
-      begin
-        if Length(Trim(cmbSearch.Text)) > 0 then
-        begin
-          iIndex  := FMRUList.IndexOf(cmbSearch.Text);
-          if iIndex > -1 then
-            FMRUList.Delete(iIndex);
-
-          while FMRUList.Count >= 10 do
-            FMRUList.Delete(Pred(FMRUList.Count));
-
-          mruText := cmbSearch.Text;
-          for subFilterIndex := Pred(FSubFilters.Count) downto 0 do
-            mruText := FSubFilters[subFilterIndex] + SubFilterSeparator;
-
-          FMRUList.Insert(0, mruText);
-        end;
-
-        Result  := GetActiveUnits();
-      end;
-
-      SaveSettings();
-    finally
-      FreeAndNil(FStyleVisitor);
-    end;
+    Result  := inherited InternalExecute();
   finally
-    FreeAndNil(FInputFilter);
-    FreeAndNil(FSubFilter);
     FreeAndNil(FTypeFilter);
-    FreeAndNil(FSubFilteredList);
-    FreeAndNil(FInputFilteredList);
     FreeAndNil(FTypeFilteredList);
-    FreeAndNil(FSubFilters);
   end;
 end;
 
 
-procedure TfrmUnSwDialog.UpdateUnitActions();
+procedure TfrmUnSwDialog.UpdateItemActions();
 var
   bDFM:       Boolean;
   bUnits:     Boolean;
@@ -601,70 +513,6 @@ begin
 end;
 
 
-procedure TfrmUnSwDialog.UpdateList();
-var
-  activeUnit:       TUnSwUnit;
-  activeUnits:      TUnSwUnitList;
-  itemIndex:        Integer;
-  listIndex:        Integer;
-  filteredList:     TUnSwUnitList;
-  selStart:         Integer;
-
-begin
-  activeUnits   := GetActiveUnits();
-
-  filteredList  := TUnSwUnitList.Create();
-  try
-    filteredList.Clone(FSubFilteredList);
-    FInputFilter.FilterList(filteredList);
-
-    if (filteredList.Count = 0) and (not Settings.Filter.AllowEmptyResult) then
-    begin
-      { Only enforce AllowEmptyResult when adding to the filter }
-      if Length(FInputFilter.Filter) > Length(FLastFilter) then
-      begin
-        FInputFilter.Filter := FLastFilter;
-        selStart            := cmbSearch.SelStart;
-        cmbSearch.Text      := FLastFilter;
-        cmbSearch.SelStart  := selStart;
-        Exit;
-      end;
-    end;
-
-    FLastFilter     := FInputFilter.Filter;
-    FInputFilteredList.Clone(filteredList);
-  finally
-    FreeAndNil(filteredList);
-  end;
-
-
-  lstUnits.Count  := FInputFilteredList.Count;
-  if FInputFilteredList.Count > 0 then
-  begin
-    lstUnits.ClearSelection();
-
-    if Assigned(activeUnits) then
-    try
-      for itemIndex := 0 to Pred(activeUnits.Count) do
-      begin
-        activeUnit  := activeUnits[itemIndex];
-        listIndex   := FInputFilteredList.IndexOf(activeUnit);
-        if listIndex > -1 then
-          lstUnits.Selected[listIndex]  := True;
-      end;
-    finally
-      FreeAndNil(activeUnits);
-    end;
-
-    if lstUnits.SelCount = 0 then
-      lstUnits.Selected[0]  := True;
-  end;
-
-  if Assigned(lstUnits.OnClick) then
-    lstUnits.OnClick(nil);
-end;
-
-
 function SortByName(Item1, Item2: Pointer): Integer;
 begin
   Result  := CompareText(TUnSwUnit(Item1).Name, TUnSwUnit(Item2).Name)
@@ -720,14 +568,14 @@ begin
 end;
 
 
-procedure TfrmUnSwDialog.UpdateTypeFilter();
+procedure TfrmUnSwDialog.UpdateTypeFilter(AUpdateList: Boolean);
 begin
   FTypeFilter.IncludeUnits          := ((not FFormsOnly) and chkUnits.Checked);
   FTypeFilter.IncludeProjectSource  := ((not FFormsOnly) and chkProjectSource.Checked);
   FTypeFilter.IncludeForms          := chkForms.Checked;
   FTypeFilter.IncludeDataModules    := chkDataModules.Checked;
 
-  FTypeFilteredList.Clone(FUnitList);
+  FTypeFilteredList.Clone(ItemList);
   FTypeFilter.FilterList(FTypeFilteredList);
 
   if actSortByName.Checked then
@@ -735,83 +583,8 @@ begin
   else
     FTypeFilteredList.Sort(SortByType);
 
-  UpdateSubFilters();
-end;
-
-
-procedure TfrmUnSwDialog.PopFilter();
-begin
-  if FSubFilters.Count > 0 then
-  begin
-    FSubFilters.Delete(Pred(FSubFilters.Count));
+  if AUpdateList then
     UpdateSubFilters();
-  end;
-end;
-
-
-procedure TfrmUnSwDialog.UpdateSubFilters();
-var
-  iFilter:        Integer;
-  sFilters:       String;
-
-begin
-  FSubFilteredList.Clone(FTypeFilteredList);
-
-  if FSubFilters.Count > 0 then
-  begin
-    for iFilter := 0 to Pred(FSubFilters.Count) do
-    begin
-      sFilters          := sFilters + FSubFilters[iFilter] + SubFilterSeparator;
-      FSubFilter.Filter := FSubFilters[iFilter];
-      FSubFilter.FilterList(FSubFilteredList);
-    end;
-
-    lblSubFilters.Caption := Trim(sFilters);
-    pnlSubFilters.Visible := True;
-  end else
-    pnlSubFilters.Visible := False;
-
-  UpdateList();
-end;
-
-
-function TfrmUnSwDialog.PushFilter(const AFilter: String): Boolean;
-var
-  sFilter:      String;
-
-begin
-  sFilter := Trim(AFilter);  
-  Result  := (Length(sFilter) > 0) and (FSubFilters.IndexOf(AFilter) = -1);
-  if Result then
-  begin
-    FSubFilters.Add(AFilter);
-    UpdateSubFilters();
-  end;
-end;
-
-
-function TfrmUnSwDialog.GetActiveUnits(): TUnSwUnitList;
-var
-  itemIndex:      Integer;
-
-begin
-  Result  := nil;
-
-  if Assigned(FActiveUnit) then
-  begin
-    Result              := TUnSwUnitList.Create();
-    Result.OwnsObjects  := False;
-    Result.Add(FActiveUnit);
-    FActiveUnit         := nil;
-  end else if lstUnits.SelCount > 0 then
-  begin
-    Result              := TUnSwUnitList.Create();
-    Result.OwnsObjects  := False;
-    
-    for itemIndex := 0 to Pred(lstUnits.Items.Count) do
-      if lstUnits.Selected[itemIndex] then
-        Result.Add(FInputFilteredList[itemIndex]);
-  end;
 end;
 
 
@@ -837,11 +610,12 @@ begin
       dsType: actSortByType.Checked := True;
     end;
 
-    FMRUList                  := dialogSettings.MRUList;
-    cmbSearch.Items.Assign(FMRUList);
-
+    MRUList.Assign(dialogSettings.MRUList);
+    
     Self.ClientWidth          := dialogSettings.Width;
     Self.ClientHeight         := dialogSettings.Height;
+
+    inherited LoadSettings();
   finally
     FLoading  := False;
   end;
@@ -871,63 +645,18 @@ begin
   dialogSettings.Width                := Self.ClientWidth;
   dialogSettings.Height               := Self.ClientHeight;
 
+  dialogSettings.MRUList.Assign(MRUList);
+
   Settings.Save();
-end;
 
-
-procedure TfrmUnSwDialog.actSelectAllExecute(Sender: TObject);
-begin
-  lstUnits.SelectAll();
-end;
-
-
-procedure TfrmUnSwDialog.actSelectInvertExecute(Sender: TObject);
-var
-  iItem:      Integer;
-
-begin
-  for iItem := Pred(lstUnits.Count) downto 0 do
-    lstUnits.Selected[iItem]  := not lstUnits.Selected[iItem];
+  inherited SaveSettings();
 end;
 
 
 procedure TfrmUnSwDialog.SortExecute(Sender: TObject);
 begin
   (Sender as TAction).Checked := True;
-  UpdateTypeFilter();
-end;
-
-
-procedure TfrmUnSwDialog.SelectMRUItem();
-var
-  mruText:      String;
-
-begin
-  mruText := FMRUList[FMRUIndex];
-  cmbSearch.ItemIndex := FMRUIndex;
-  ActiveControl       := cmbSearch;
-  cmbSearch.SelectAll();
-
-  if Assigned(cmbSearch.OnChange) then
-    cmbSearch.OnChange(nil);
-end;
-
-
-procedure TfrmUnSwDialog.actMRUNextExecute(Sender: TObject);
-begin
-  if FMRUIndex < Pred(FMRUList.Count) then
-    Inc(FMRUIndex);
-
-  SelectMRUItem();
-end;
-
-
-procedure TfrmUnSwDialog.actMRUPriorExecute(Sender: TObject);
-begin
-  if FMRUIndex >= -1 then
-    Dec(FMRUIndex);
-
-  SelectMRUItem();
+  UpdateTypeFilter(True);
 end;
 
 
@@ -979,147 +708,47 @@ end;
 procedure TfrmUnSwDialog.btnConfigurationClick(Sender: TObject);
 begin
   if TfrmUnSwConfiguration.Execute() then
-    lstUnits.Invalidate();
+    lstItems.Invalidate();
 end;
 
 
-procedure TfrmUnSwDialog.cmbSearchChange(Sender: TObject);
+function TfrmUnSwDialog.CreateItemList(): TBaseSwItemList;
 begin
-  if cmbSearch.Text <> FInputFilter.Filter then
-  begin
-    FInputFilter.Filter := cmbSearch.Text;
-    UpdateList();
-  end;
+  Result  := TUnSwUnitList.Create();
 end;
 
 
-procedure TfrmUnSwDialog.cmbSearchKeyDown(Sender: TObject; var Key: Word;
-                                          Shift: TShiftState);
+function TfrmUnSwDialog.ColorsEnabled(): Boolean;
 begin
-  if not cmbSearch.DroppedDown then
-    if ((Shift = []) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) or
-       ((Shift = [ssCtrl]) and (Key in [VK_HOME, VK_END])) or
-       ((Shift = [ssShift]) and (Key in [VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT])) then
-    begin
-      lstUnits.Perform(WM_KEYDOWN, Key, 0);
-      Key := 0;
-    end else if Shift = [ssCtrl] then
-      case Key of
-        VK_TAB:
-          begin
-            if PushFilter(cmbSearch.Text) then
-              cmbSearch.Text  := '';
-
-            Key := 0;
-          end;
-        VK_BACK:
-          begin
-            cmbSearch.Text      := '';
-            FInputFilter.Filter := '';
-            PopFilter();
-            Key := 0;
-          end;
-      end;
+  Result  := Settings.Colors.Enabled;
 end;
 
 
-procedure TfrmUnSwDialog.cmbSearchKeyPress(Sender: TObject; var Key: Char);
+function TfrmUnSwDialog.CreateStyleVisitor(): TBaseSwStyleVisitor;
 begin
-  // Ctrl-Backspace
-  if Key = #127 then
-    Key := #0;
+  Result  := TUnSwStyleVisitor.Create();
+end;
+
+
+function TfrmUnSwDialog.CreateInputFilter(): TBaseSwItemSimpleFilter;
+begin
+  if FFormsOnly then
+    Result  := TUnSwUnitSimpleFormNameFilter.Create()
+  else
+    Result  := TBaseSwItemSimpleNameFilter.Create();
 end;
 
 
 procedure TfrmUnSwDialog.TypeFilterChange(Sender: TObject);
 begin
   if not FLoading then
-    UpdateTypeFilter();
+    UpdateTypeFilter(True);
 end;
 
 
 procedure TfrmUnSwDialog.lstUnitsDblClick(Sender: TObject);
 begin
   btnOK.Click();
-end;
-
-
-procedure TfrmUnSwDialog.lstUnitsClick(Sender: TObject);
-begin
-  UpdateUnitActions();
-end;
-
-
-procedure TfrmUnSwDialog.lstUnitsData(Control: TWinControl; Index: Integer;
-                                      var Data: string);
-begin
-  Data  := FInputFilteredList[Index].Name;
-end;
-
-
-procedure TfrmUnSwDialog.lstUnitsDrawItem(Control: TWinControl; Index: Integer;
-                                          Rect: TRect; State: TOwnerDrawState);
-var
-  currentUnit:  TUnSwUnit;
-  textRect:     TRect;
-  text:         String;
-
-begin
-  with TListBox(Control) do
-  begin
-    currentUnit := FInputFilteredList[Index];
-    currentUnit.AcceptVisitor(FStyleVisitor);
-    
-    if FFormsOnly and (currentUnit is TUnSwModuleUnit) then
-      text  := TUnSwModuleUnit(currentUnit).FormName
-    else
-      text  := currentUnit.Name;
-
-    if odSelected in State then
-    begin
-      Canvas.Brush.Color  := clHighlight;
-      Canvas.Font.Color   := clHighlightText;
-    end else
-    begin
-      Canvas.Brush.Color  := clWindow;
-      if Settings.Colors.Enabled then
-        Canvas.Font.Color := FStyleVisitor.Color
-      else
-        Canvas.Font.Color := clWindowText;
-    end;
-    Canvas.FillRect(Rect);
-
-    textRect  := Rect;
-    InflateRect(textRect, -2, -2);
-    ilsTypes.Draw(Canvas, textRect.Left, textRect.Top, FStyleVisitor.ImageIndex);
-
-    if FStyleVisitor.OverlayIndex > -1 then
-      ilsTypes.Draw(Canvas, textRect.Left, textRect.Top, FStyleVisitor.OverlayIndex);
-
-    Inc(textRect.Left, ilsTypes.Width + 4);
-    DrawText(Canvas.Handle, PChar(text), Length(text), textRect, DT_SINGLELINE or
-             DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
-  end;
-end;
-
-
-procedure TfrmUnSwDialog.lstUnitsMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-var
-  itemIndex: Integer;
-
-begin
-  { Bij rechtermuisknop het item selecteren indien deze niet al
-    geselecteerd was }
-  if Button = mbRight then
-  begin
-    itemIndex := lstUnits.ItemAtPos(Point(X, Y), True);
-    if (itemIndex > -1) and (not lstUnits.Selected[itemIndex]) then
-    begin
-      lstUnits.ClearSelection;
-      lstUnits.Selected[itemIndex]  := True;
-      UpdateUnitActions();
-    end;
-  end;
 end;
 
 
@@ -1142,9 +771,15 @@ begin
   finally
     FreeAndNil(pUnits);
     
-    lstUnits.Invalidate();
-    UpdateUnitActions();
+    lstItems.Invalidate();
+    UpdateItemActions();
   end;
+end;
+
+
+function TfrmUnSwDialog.AllowEmptyResult(): Boolean;
+begin
+  Result  := Settings.Filter.AllowEmptyResult;
 end;
 
 
@@ -1164,7 +799,8 @@ end;
 procedure TfrmUnSwDialog.btnOKClick(Sender: TObject);
 begin
   FOpenDFM := ((GetKeyState(VK_SHIFT) and 128) <> 0);
-  ModalResult := mrOk;
+  
+  inherited;
 end;
 
 end.

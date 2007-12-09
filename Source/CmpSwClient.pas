@@ -6,6 +6,9 @@
 }
 unit CmpSwClient;
 
+// #ToDo2 (MvR) 9-12-2007: Ctrl activates the designer guidelines in BDS 2006
+//                         and up, which get drawn over our dialog. messy.
+
 interface
 uses
   ActnList,
@@ -16,26 +19,24 @@ uses
 
   BaseSwClient;
 
-  
+
 type
   TComponentSwitcherHook = class(TBaseSwitcherHook)
   protected
     function ActiveModule(): IOTAModule;
     function ActiveEditor(): IOTAEditor;
 
-//    function ActiveFileName(): String;
-//    {$IFDEF DELPHI7ORLOWER}
-//    function ActiveGroup(): IOTAProjectGroup;
-//    {$ENDIF}
-//    function ActiveProject(): IOTAProject;
-
-    procedure NewExecute(Sender: TObject); virtual;
+    procedure NewExecute(Sender: TObject);
   public
     constructor Create();
   end;
 
 
 implementation
+uses
+  BaseSwObjects,
+  CmpSwDialog,
+  CmpSwObjects, Windows;
 
 
 { TComponentSwitcherHook}
@@ -50,128 +51,6 @@ begin
       ShowMessage('Error while loading ComponentSwitcher: ' + E.Message);
   end;
 end;
-
-
-(*
-function TUnitSwitcherHook.ActiveFileName(): String;
-var
-  module:     IOTAModule;
-
-begin
-  Result  := '';
-  module  := (BorlandIDEServices as IOTAModuleServices).CurrentModule;
-  if Assigned(module) then
-  begin
-    if Assigned(module.CurrentEditor) then
-      Result  := module.FileName;
-  end;
-end;
-
-{$IFDEF DELPHI7ORLOWER}
-function TUnitSwitcherHook.ActiveGroup(): IOTAProjectGroup;
-var
-  module:           IOTAModule;
-  moduleServices:   IOTAModuleServices;
-  moduleIndex:      Integer;
-
-begin
-  Result          := nil;
-  moduleServices  := (BorlandIDEServices as IOTAModuleServices);
-  for moduleIndex := 0 to Pred(moduleServices.ModuleCount) do
-  begin
-    module  := moduleServices.Modules[moduleIndex];
-    if Supports(module, IOTAProjectGroup, Result) then
-      break;
-  end;
-end;
-{$ENDIF}
-
-function TUnitSwitcherHook.ActiveProject(): IOTAProject;
-{$IFDEF DELPHI7ORLOWER}
-var
-  projectGroup:       IOTAProjectGroup;
-  module:             IOTAModule;
-  moduleServices:     IOTAModuleServices;
-  moduleIndex:        Integer;
-{$ENDIF}
-
-begin
-  {$IFDEF DELPHI7ORLOWER}
-  Result        := nil;
-  projectGroup  := ActiveGroup();
-  if not Assigned(projectGroup) then
-  begin
-    moduleServices  := (BorlandIDEServices as IOTAModuleServices);
-    for moduleIndex := 0 to Pred(moduleServices.ModuleCount) do
-    begin
-      module  := moduleServices.Modules[moduleIndex];
-      if Supports(module, IOTAProject, Result) then
-        break;
-    end;
-  end else
-    Result  := projectGroup.ActiveProject;
-  {$ELSE}
-  Result  := (BorlandIDEServices as IOTAModuleServices).GetActiveProject();
-  {$ENDIF}
-end;
-
-
-procedure TUnitSwitcherHook.NewExecute(Sender: TObject);
-var
-  activeIndex:    Integer;
-  activeUnit:     TUnSwUnit;
-  itemIndex:      Integer;
-  moduleIndex:    Integer;
-  project:        IOTAProject;
-  selectedUnits:  TUnSwUnitList;
-  unitList:       TUnSwUnitList;
-  openDFM:        Boolean;
-  openType:       TUnSwActivateType;
-  fileName:       string;
-
-begin
-  project := ActiveProject();
-  if not Assigned(project) then
-    exit;
-
-  unitList  := TUnSwUnitList.Create();
-  try
-    unitList.Add(TUnSwProjectUnit.Create(project));
-
-    for moduleIndex := 0 to Pred(project.GetModuleCount) do
-      unitList.Add(TUnSwModuleUnit.Create(project.GetModule(moduleIndex)));
-
-    activeUnit  := nil;
-    fileName    := ActiveFileName();
-
-    if SameText(ExtractFileExt(fileName), '.dfm') then
-      fileName  := ChangeFileExt(fileName, '.pas');
-
-    activeIndex := unitList.IndexOfFileName(fileName);
-    if activeIndex > -1 then
-      activeUnit  := unitList[activeIndex];
-
-    selectedUnits := TfrmUnSwDialog.Execute(unitList, (Sender = FViewFormAction),
-                                            openDFM, activeUnit);
-    if Assigned(selectedUnits) then
-    try
-      openType := atSource;
-      if openDFM then
-        openType := atDFM
-      else if Sender = FViewFormAction then
-        openType := atForm;
-
-      for itemIndex := 0 to Pred(selectedUnits.Count) do
-        selectedUnits[itemIndex].Activate(openType);
-    finally
-      FreeAndNil(selectedUnits);
-    end;
-  finally
-    FreeAndNil(unitList);
-  end;
-end;
-*)
-
 
 
 function TComponentSwitcherHook.ActiveModule(): IOTAModule;
@@ -193,21 +72,66 @@ begin
 end;
 
 
+function SortByName(Item1, Item2: Pointer): Integer;
+begin
+  Result  := CompareText(TCmpSwComponent(Item1).Name, TCmpSwComponent(Item2).Name)
+end;
+
+
 procedure TComponentSwitcherHook.NewExecute(Sender: TObject);
 var
-  editor:     IOTAEditor;
-  formEditor: IOTAFormEditor;
-  name:       String;
+  editor:           IOTAEditor;
+  formEditor:       IOTAFormEditor;
+  formComponent:    IOTAComponent;
+  componentIndex:   Integer;
+  component:        IOTAComponent;
+  itemList:         TBaseSwItemList;
+  item:             TCmpSwComponent;
+  selectedItems:    TBaseSwItemList;
 
 begin
   editor  := ActiveEditor();
-  if Supports(editor, IOTAFormEditor, formEditor) then
+  if Assigned(editor) and Supports(editor, IOTAFormEditor, formEditor) then
   begin
-    name := '';
-    formEditor.GetRootComponent.GetPropValueByName('Name', name);
-    ShowMessage(name);
-  end else
-    OldActionExecute(Sender);
+    formComponent := formEditor.GetRootComponent;
+    itemList      := TBaseSwItemList.Create();
+
+    for componentIndex := Pred(formComponent.GetComponentCount) downto 0 do
+    begin
+      component := formComponent.GetComponent(componentIndex);
+      item      := TCmpSwComponent.TryCreate(component);
+
+      if Assigned(item) then
+        itemList.Add(item);
+    end;
+
+    if itemList.Count > 0 then
+    begin
+      itemList.Sort(SortByName);
+
+      (*
+      ps := (borlandideservices as IOTAPackageServices);
+      for pi := 0 to Pred(ps.PackageCount) do
+      begin
+        for ci := 0 to Pred(ps.ComponentCount[pi]) do
+        begin
+          itemList.Add(TTestItem.Create(ps.PackageNames[pi] + ' - ' + ps.ComponentNames[pi, ci]));
+        end;
+      end;
+      *)
+
+      selectedItems := TfrmCmpSwDialog.Execute(itemList);
+
+      if Assigned(selectedItems) then
+      begin
+        for componentIndex := 0 to Pred(selectedItems.Count) do
+        begin
+          item  := TCmpSwComponent(selectedItems[componentIndex]);
+          item.Activate(componentIndex = 0);
+        end;
+      end;
+    end;
+  end;
 end;
 
 end.

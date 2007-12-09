@@ -272,7 +272,7 @@ begin
     end;
   end;
   {$ELSE}
-  OpenModule(FProject, True);
+  OpenModule(FProject, atSource);
   {$ENDIF}
 end;
 

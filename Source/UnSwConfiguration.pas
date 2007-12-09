@@ -104,7 +104,7 @@ end;
 
 procedure TfrmUnSwConfiguration.lblBugReportClick(Sender: TObject);
 begin
-  ShellExecute(0, 'open', 'http://projects.kamadev.net/', nil, nil, SW_SHOWNORMAL);
+  ShellExecute(0, 'open', 'mailto:support@x2software.net', nil, nil, SW_SHOWNORMAL);
 end;
 
 

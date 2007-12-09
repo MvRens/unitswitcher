@@ -18,7 +18,7 @@ type
     FList:      TBaseSwItemList;
   protected
     // IBaseSwVisitor
-    procedure VisitItem(AItem: TBaseSwItem); virtual;
+    procedure VisitItem(const AItem: TBaseSwItem); virtual;
 
     procedure FilterItem(const AItem: TBaseSwItem); virtual;
   public
@@ -38,7 +38,7 @@ type
 
   TBaseSwItemSimpleNameFilter   = class(TBaseSwItemSimpleFilter)
   protected
-    procedure VisitItem(AItem: TBaseSwItem); override;
+    procedure VisitItem(const AItem: TBaseSwItem); override;
   end;
 
 
@@ -65,7 +65,7 @@ begin
 end;
 
 
-procedure TBaseSwItemFilter.VisitItem(AItem: TBaseSwItem);
+procedure TBaseSwItemFilter.VisitItem(const AItem: TBaseSwItem);
 begin
 end;
 
@@ -78,7 +78,7 @@ end;
 
 
 { TBaseSwItemSimpleNameFilter }
-procedure TBaseSwItemSimpleNameFilter.VisitItem(AItem: TBaseSwItem);
+procedure TBaseSwItemSimpleNameFilter.VisitItem(const AItem: TBaseSwItem);
 begin
   if (Length(Filter) > 0) and
      (AnsiPos(Filter, LowerCase(AItem.Name)) = 0) then

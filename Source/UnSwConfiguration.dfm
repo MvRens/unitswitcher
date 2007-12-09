@@ -24,7 +24,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
     Top = 4
     Width = 295
     Height = 231
-    ActivePage = tsGeneral
+    ActivePage = tsAbout
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     object tsGeneral: TTabSheet
@@ -276,7 +276,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Top = 23
         Width = 54
         Height = 13
-        Caption = 'Version 0.5'
+        Caption = 'Version 0.6'
       end
       object TLabel
         Left = 135

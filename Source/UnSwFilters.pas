@@ -23,7 +23,7 @@ type
   end;
 
 
-  TUnSwUnitTypeFilter           = class(TBaseSwItemFilter)
+  TUnSwUnitTypeFilter           = class(TBaseSwItemFilter, IBaseSwVisitor, IUnSwVisitor)
   private
     FIncludeDataModules:    Boolean;
     FIncludeForms:          Boolean;
@@ -33,7 +33,7 @@ type
     procedure VisitModule(const AUnit: TUnSwModuleUnit);
     procedure VisitProject(const AUnit: TUnSwProjectUnit);
   public
-    constructor Create;
+    constructor Create();
 
     property IncludeDataModules:    Boolean read FIncludeDataModules    write FIncludeDataModules;
     property IncludeForms:          Boolean read FIncludeForms          write FIncludeForms;
@@ -63,7 +63,7 @@ end;
 
 
 { TUnSwUnitTypeFilter }
-constructor TUnSwUnitTypeFilter.Create;
+constructor TUnSwUnitTypeFilter.Create();
 begin
   inherited;
 

@@ -29,7 +29,11 @@ package UnitSwitcher;
 
 requires
   rtl,
-  designide;
+  designide,
+  vcl,
+  xmlrtl,
+  vclactnband,
+  vclx;
 
 contains
   UnSwClient in '..\..\Source\UnSwClient.pas',
@@ -38,6 +42,14 @@ contains
   UnSwFilters in '..\..\Source\UnSwFilters.pas',
   UnSwConfiguration in '..\..\Source\UnSwConfiguration.pas' {frmUnSwConfiguration},
   UnSwSettings in '..\..\Source\UnSwSettings.pas',
-  UnSwShortcuts in '..\..\Source\UnSwShortcuts.pas' {frmUnSwShortcuts};
+  UnSwShortcuts in '..\..\Source\UnSwShortcuts.pas' {frmUnSwShortcuts},
+  CmpSwClient in '..\..\Source\CmpSwClient.pas',
+  BaseSwClient in '..\..\Source\BaseSwClient.pas',
+  BaseSwDialog in '..\..\Source\BaseSwDialog.pas' {frmBaseSwDialog},
+  BaseSwFilters in '..\..\Source\BaseSwFilters.pas',
+  BaseSwObjects in '..\..\Source\BaseSwObjects.pas',
+  UnSwReg in '..\..\Source\UnSwReg.pas',
+  CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog},
+  CmpSwObjects in '..\..\Source\CmpSwObjects.pas';
 
 end.
