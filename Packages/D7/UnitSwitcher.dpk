@@ -47,6 +47,8 @@ contains
   UnSwReg in '..\..\Source\UnSwReg.pas',
   BaseSwObjects in '..\..\Source\BaseSwObjects.pas',
   BaseSwFilters in '..\..\Source\BaseSwFilters.pas',
-  BaseSwDialog in '..\..\Source\BaseSwDialog.pas' {frmBaseSwDialog};
+  BaseSwDialog in '..\..\Source\BaseSwDialog.pas' {frmBaseSwDialog},
+  CmpSwObjects in '..\..\Source\CmpSwObjects.pas',
+  CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog};
 
 end.

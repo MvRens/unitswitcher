@@ -10,16 +10,18 @@ uses
 type
   TCmpSwComponent = class(TBaseSwItem)
   private
-    FComponent:   IOTAComponent;
-    FName:        String;
+    FComponent:       IOTAComponent;
+    FComponentClass:  String;
+    FName:            String;
   protected
     function GetName(): String; override;
   public
     constructor Create(AComponent: IOTAComponent);
-
-    procedure Activate(const AClearSelection: Boolean); 
-
     class function TryCreate(AComponent: IOTAComponent): TCmpSwComponent;
+
+    procedure Activate(const AClearSelection: Boolean);
+
+    property ComponentClass:  String  read FComponentClass;
   end;
 
 
@@ -41,8 +43,9 @@ constructor TCmpSwComponent.Create(AComponent: IOTAComponent);
 begin
   inherited Create();
 
-  FComponent  := AComponent;
+  FComponent      := AComponent;
   FComponent.GetPropValueByName('Name', FName);
+  FComponentClass := FComponent.GetComponentType();
 end;
 
 
