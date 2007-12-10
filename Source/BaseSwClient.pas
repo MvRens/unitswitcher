@@ -20,6 +20,8 @@ type
     Action:         TContainedAction;
     OldOnExecute:   TNotifyEvent;
     NewOnExecute:   TNotifyEvent;
+    OldOnUpdate:    TNotifyEvent;
+    NewOnUpdate:    TNotifyEvent;
   end;
 
 
@@ -30,12 +32,13 @@ type
     function GetHookedActionIndex(AAction: TContainedAction): Integer;
     function GetHookedAction(AAction: TContainedAction): PHookedAction;
 
-    procedure HookAction(AAction: TContainedAction; AOnExecute: TNotifyEvent);
-    function HookIDEAction(const AName: String; AOnExecute: TNotifyEvent): TContainedAction;
+    procedure HookAction(AAction: TContainedAction; AOnExecute: TNotifyEvent; AOnUpdate: TNotifyEvent = nil);
+    function HookIDEAction(const AName: String; AOnExecute: TNotifyEvent; AOnUpdate: TNotifyEvent = nil): TContainedAction;
     procedure UnhookActionIndex(AIndex: Integer);
     procedure UnhookAction(AAction: TContainedAction);
 
     procedure OldActionExecute(AAction: TObject);
+    procedure OldActionUpdate(AAction: TObject);
   public
     constructor Create();
     destructor Destroy(); override;
@@ -100,7 +103,7 @@ begin
 end;
 
 
-procedure TBaseSwitcherHook.HookAction(AAction: TContainedAction; AOnExecute: TNotifyEvent);
+procedure TBaseSwitcherHook.HookAction(AAction: TContainedAction; AOnExecute, AOnUpdate: TNotifyEvent);
 var
   hookedAction:   PHookedAction;
 
@@ -111,13 +114,20 @@ begin
   hookedAction^.Action        := AAction;
   hookedAction^.OldOnExecute  := AAction.OnExecute;
   hookedAction^.NewOnExecute  := AOnExecute;
-  FHookedActions.Add(hookedAction);
-
   AAction.OnExecute := AOnExecute;
+
+  hookedAction^.OldOnUpdate   := AAction.OnUpdate;
+  hookedAction^.NewOnUpdate   := AOnUpdate;
+  
+  if Assigned(AOnUpdate) then
+    AAction.OnUpdate            := AOnUpdate;
+
+  FHookedActions.Add(hookedAction);
 end;
 
 
-function TBaseSwitcherHook.HookIDEAction(const AName: String; AOnExecute: TNotifyEvent): TContainedAction;
+function TBaseSwitcherHook.HookIDEAction(const AName: String;
+                                         AOnExecute, AOnUpdate: TNotifyEvent): TContainedAction;
 var
   actionIndex:    Integer;
   ntaServices:    INTAServices;
@@ -136,7 +146,7 @@ begin
     if action.Name = AName then
     begin
       Result  := action;
-      HookAction(action, AOnExecute);
+      HookAction(action, AOnExecute, AOnUpdate);
       Break;
     end;
   end;
@@ -158,6 +168,7 @@ begin
 
 //  if onExecute = hookedAction^.NewOnExecute then
     action.OnExecute  := hookedAction^.OldOnExecute;
+    action.OnUpdate   := hookedAction^.OldOnUpdate;
 
   Dispose(hookedAction);
   FHookedActions.Delete(AIndex);
@@ -184,8 +195,23 @@ begin
   begin
     hookedAction  := GetHookedAction(TContainedAction(AAction));
 
-    if Assigned(hookedAction) and Assigned(hookedAction^.NewOnExecute) then
-      hookedAction^.NewOnExecute(AAction);
+    if Assigned(hookedAction) and Assigned(hookedAction^.OldOnExecute) then
+      hookedAction^.OldOnExecute(AAction);
+  end;
+end;
+
+
+procedure TBaseSwitcherHook.OldActionUpdate(AAction: TObject);
+var
+  hookedAction:   PHookedAction;
+
+begin
+  if AAction is TContainedAction then
+  begin
+    hookedAction  := GetHookedAction(TContainedAction(AAction));
+
+    if Assigned(hookedAction) and Assigned(hookedAction^.OldOnUpdate) then
+      hookedAction^.OldOnUpdate(AAction);
   end;
 end;
 

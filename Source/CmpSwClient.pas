@@ -26,6 +26,7 @@ type
     function ActiveModule(): IOTAModule;
     function ActiveEditor(): IOTAEditor;
 
+    procedure NewUpdate(Sender: TObject);
     procedure NewExecute(Sender: TObject);
   public
     constructor Create();
@@ -45,7 +46,7 @@ begin
   inherited;
 
   try
-    HookIDEAction('SearchFindCommand', NewExecute);
+    HookIDEAction('SearchFindCommand', NewExecute, NewUpdate);
   except
     on E:EAssertionFailed do
       ShowMessage('Error while loading ComponentSwitcher: ' + E.Message);
@@ -132,6 +133,21 @@ begin
       end;
     end;
   end;
+end;
+
+
+procedure TComponentSwitcherHook.NewUpdate(Sender: TObject);
+var
+  editor:           IOTAEditor;
+
+begin
+  { BDS 2006 with the Embedded Designer disables the Find action }
+  editor  := ActiveEditor();
+
+  if Assigned(editor) and Supports(editor, IOTAFormEditor) then
+    (Sender as TCustomAction).Enabled := True
+  else
+    OldActionUpdate(Sender);
 end;
 
 end.

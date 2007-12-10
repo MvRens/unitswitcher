@@ -116,6 +116,8 @@ type
 
     procedure LoadSettings(); virtual;
     procedure SaveSettings(); virtual;
+
+    procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect); virtual;
   protected
     property ActiveItem:  TBaseSwItem     read FActiveItem  write FActiveItem;
     property ItemList:    TBaseSwItemList read FItemList    write FItemList;
@@ -124,7 +126,7 @@ type
     class function Execute(const AItems: TBaseSwItemList; const AActive: TBaseSwItem = nil): TBaseSwItemList;
   end;
 
-  
+
 implementation
 uses
   Messages,
@@ -546,12 +548,22 @@ begin
 end;
 
 
+procedure TfrmBaseSwDialog.DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect);
+var
+  text:         String;
+
+begin
+  text  := GetItemDisplayName(AItem);
+  DrawText(ACanvas.Handle, PChar(text), Length(text), ARect, DT_SINGLELINE or
+           DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
+end;
+
+
 procedure TfrmBaseSwDialog.lstItemsDrawItem(Control: TWinControl; Index: Integer;
                                           Rect: TRect; State: TOwnerDrawState);
 var
   currentItem:  TBaseSwItem;
   textRect:     TRect;
-  text:         String;
 
 begin
   with TListBox(Control) do
@@ -559,8 +571,6 @@ begin
     currentItem := FInputFilteredList[Index];
     if Assigned(FStyleVisitor) then
       currentItem.AcceptVisitor(FStyleVisitor);
-
-    text  := GetItemDisplayName(currentItem);
 
     if odSelected in State then
     begin
@@ -589,8 +599,7 @@ begin
     end;
 
     Inc(textRect.Left, ilsTypes.Width + 4);
-    DrawText(Canvas.Handle, PChar(text), Length(text), textRect, DT_SINGLELINE or
-             DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS);
+    DrawItemText(Canvas, currentItem, textRect);
   end;
 end;
 

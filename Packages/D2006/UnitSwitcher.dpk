@@ -50,6 +50,7 @@ contains
   BaseSwObjects in '..\..\Source\BaseSwObjects.pas',
   UnSwReg in '..\..\Source\UnSwReg.pas',
   CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog},
-  CmpSwObjects in '..\..\Source\CmpSwObjects.pas';
+  CmpSwObjects in '..\..\Source\CmpSwObjects.pas',
+  CmpSwFilters in '..\..\Source\CmpSwFilters.pas';
 
 end.

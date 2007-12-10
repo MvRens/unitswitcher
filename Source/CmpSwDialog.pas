@@ -7,13 +7,16 @@ uses
   ComCtrls,
   Controls,
   ExtCtrls,
+  Graphics,
   ImgList,
   IniFiles,
   Menus,
   StdCtrls,
+  Windows,
 
   BaseSwDialog,
-  BaseSwObjects;
+  BaseSwObjects,
+  CmpSwFilters;
 
 
 type
@@ -26,6 +29,7 @@ type
 
     function GetComponentPackage(const AClassName: String): String;
     function LoadComponentImage(const APackageName, AClassName: String): Integer;
+    procedure ResizeBitmap(const ABitmap: Graphics.TBitmap; const AWidth, AHeight: Integer);
   public
     constructor Create(AImageList: TImageList);
     destructor Destroy(); override;
@@ -33,17 +37,25 @@ type
 
 
   TfrmCmpSwDialog = class(TfrmBaseSwDialog)
+  private
+    FClassFilteredList:   TBaseSwItemList;
+    FClassFilter:         TCmpSwComponentClassFilter;
   protected
+    function InternalExecute(): TBaseSwItemList; override;
+
     function CreateStyleVisitor(): TBaseSwStyleVisitor; override;
+    function GetBaseItemList(): TBaseSwItemList; override;
+
+    procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect); override;
+
+    procedure UpdateClassFilter();
   end;
 
 
 implementation
 uses
-  CommCtrl,
   SysUtils,
   ToolsAPI,
-  Windows,
 
   CmpSwObjects;
 
@@ -88,7 +100,7 @@ begin
   end;
 
   if ImageIndex = -2 then
-    ImageIndex := 0;
+    ImageIndex := -1;
 end;
 
 
@@ -109,7 +121,13 @@ begin
       if SameText(packageServices.ComponentNames[packageIndex, componentIndex],
                   AClassName) then
       begin
-        Result := packageServices.PackageNames[packageIndex] + '.bpl';
+        Result := packageServices.PackageNames[packageIndex];
+
+        { Delphi 7 doesn't add the .bpl extension, BDS 2006 does, let's just
+          take the safe route and check }
+        if not SameText(ExtractFileExt(Result), '.bpl') then
+          Result  := Result + '.bpl';
+
         Break;
       end;
     end;
@@ -121,7 +139,7 @@ function TCmpSwStyleVisitor.LoadComponentImage(const APackageName, AClassName: S
 var
   packageHandle:    THandle;
   bitmapHandle:     THandle;
-  bitmap:           TBitmap;
+  bitmap:           Graphics.TBitmap;
 
 begin
   Result        := -1;
@@ -129,13 +147,27 @@ begin
 
   if packageHandle <> 0 then
   try
-    bitmapHandle  := LoadBitmap(packageHandle, PChar(AClassName));
+    { BDS includes 16x16 versions of the component bitmaps, try those first }
+    bitmapHandle  := LoadBitmap(packageHandle, PChar(AClassName + '16'));
+    if bitmapHandle = 0 then
+      bitmapHandle  := LoadBitmap(packageHandle, PChar(AClassName));
+
     if bitmapHandle <> 0 then
     begin
-      bitmap  ;=
-      // #ToDo1 (MvR) 10-12-2007: proper transparency
-      Result := ImageList_AddMasked(FImageList.Handle, bitmapHandle,
-                                    GetTransparentColor(bitmapHandle));
+      bitmap  := Graphics.TBitmap.Create();
+      try
+        bitmap.Handle := bitmapHandle;
+
+        if (bitmap.Width <> FImageList.Width) or
+           (bitmap.Height <> FImageList.Height) then
+        begin
+          ResizeBitmap(bitmap, FImageList.Width, FImageList.Height);
+        end;
+
+        Result        := FImageList.AddMasked(bitmap, bitmap.TransparentColor);
+      finally
+        FreeAndNil(bitmap);
+      end;
     end;
   finally
     FreeLibrary(packageHandle);
@@ -148,10 +180,75 @@ begin
 end;
 
 
+procedure TCmpSwStyleVisitor.ResizeBitmap(const ABitmap: Graphics.TBitmap;
+                                          const AWidth, AHeight: Integer);
+var
+  tempBitmap:     Graphics.TBitmap;
+
+begin
+  tempBitmap  := Graphics.TBitmap.Create();
+  try
+    tempBitmap.PixelFormat  := pf24bit;
+    tempBitmap.Width        := AWidth;
+    tempBitmap.Height       := AHeight;
+
+    tempBitmap.Canvas.CopyRect(Rect(0, 0, AWidth, AHeight), ABitmap.Canvas,
+                               Rect(0, 0, ABitmap.Width, ABitmap.Height));
+
+    ABitmap.Assign(tempBitmap);
+  finally
+    FreeAndNil(tempBitmap);
+  end;
+end;
+
+
 { TfrmCmpSwDialog }
+function TfrmCmpSwDialog.InternalExecute(): TBaseSwItemList;
+begin
+  FClassFilteredList  := TBaseSwItemList.Create();
+  FClassFilter        := TCmpSwComponentClassFilter.Create();
+  try
+    UpdateClassFilter();
+    Result  := inherited InternalExecute();
+  finally
+    FreeAndNil(FClassFilter);
+    FreeAndNil(FClassFilteredList);
+  end;
+end;
+
+
 function TfrmCmpSwDialog.CreateStyleVisitor(): TBaseSwStyleVisitor;
 begin
   Result  := TCmpSwStyleVisitor.Create(ilsTypes);
+end;
+
+
+procedure TfrmCmpSwDialog.DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect);
+var
+  text:   String;
+
+begin
+  inherited;
+
+  ACanvas.Font.Color  := clGrayText;
+  text  := (AItem as TCmpSwComponent).ComponentClass;
+
+  DrawText(ACanvas.Handle, PChar(text), Length(text), ARect, DT_SINGLELINE or
+           DT_RIGHT or DT_VCENTER);
+end;
+
+
+procedure TfrmCmpSwDialog.UpdateClassFilter();
+begin
+//  FClassFilteredList.Clone(ItemList);
+//  FClassFilter.FilterList(FClassFilteredList);
+end;
+
+
+function TfrmCmpSwDialog.GetBaseItemList(): TBaseSwItemList;
+begin
+//  Result  := FClassFilteredList;
+  Result  := inherited GetBaseItemList;
 end;
 
 end.
