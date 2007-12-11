@@ -49,6 +49,9 @@ contains
   BaseSwFilters in '..\..\Source\BaseSwFilters.pas',
   BaseSwDialog in '..\..\Source\BaseSwDialog.pas' {frmBaseSwDialog},
   CmpSwObjects in '..\..\Source\CmpSwObjects.pas',
-  CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog};
+  CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog},
+  CmpSwFilters in '..\..\Source\CmpSwFilters.pas',
+  BaseSwSettings in '..\..\Source\BaseSwSettings.pas',
+  CmpSwSettings in '..\..\Source\CmpSwSettings.pas';
 
 end.
