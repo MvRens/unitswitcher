@@ -51,6 +51,8 @@ contains
   UnSwReg in '..\..\Source\UnSwReg.pas',
   CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog},
   CmpSwObjects in '..\..\Source\CmpSwObjects.pas',
-  CmpSwFilters in '..\..\Source\CmpSwFilters.pas';
+  CmpSwFilters in '..\..\Source\CmpSwFilters.pas',
+  CmpSwSettings in '..\..\Source\CmpSwSettings.pas',
+  BaseSwSettings in '..\..\Source\BaseSwSettings.pas';
 
 end.
