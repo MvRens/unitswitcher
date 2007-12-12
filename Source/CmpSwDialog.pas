@@ -17,7 +17,7 @@ uses
 
   BaseSwDialog,
   BaseSwObjects,
-  CmpSwFilters;
+  CmpSwFilters, UnSwDialog;
 
 
 type
@@ -46,25 +46,36 @@ type
     gbFilters: TGroupBox;
     btnMoreFilters: TButton;
     pmnMoreFilters: TPopupMenu;
+    actSortByName: TAction;
+    actSortByType: TAction;
+    pmnItemsSortByName: TMenuItem;
+    pmnItemsSortByType: TMenuItem;
+    pmnItemsSep2: TMenuItem;
     
     procedure btnMoreFiltersClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure SortExecute(Sender: TObject);
   private
     FClassFilteredList:   TBaseSwItemList;
     FClassFilter:         TCmpSwComponentClassFilter;
 
     FFilterCheckBoxes:    TObjectList;
+    FOtherGroup:          TCmpSwFilterGroup;
   protected
     function InternalExecute(): TBaseSwItemList; override;
 
     function CreateStyleVisitor(): TBaseSwStyleVisitor; override;
     function GetBaseItemList(): TBaseSwItemList; override;
 
+    function AllowEmptyResult(): Boolean; override;
+    function ColorsEnabled(): Boolean; override;
+
     procedure LoadSettings(); override;
     procedure SaveSettings(); override;
 
     procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect); override;
     procedure UpdateClassFilter();
+    procedure SortList();
 
     procedure BuildFilterCheckboxes();
     function CreateFilterMenuItem(AParent: TMenuItem; AGroup: TCmpSwFilterGroup; AItemIndex: Integer): TMenuItem;
@@ -72,7 +83,8 @@ type
     procedure FilterCheckBoxClick(Sender: TObject);
     procedure FilterMenuItemClick(Sender: TObject);
 
-    property ClassFilter: TCmpSwComponentClassFilter  read FClassFilter;
+    property ClassFilter:         TCmpSwComponentClassFilter  read FClassFilter;
+    property ClassFilteredList:   TBaseSwItemList             read FClassFilteredList;
   end;
 
 
@@ -233,9 +245,15 @@ begin
   FClassFilteredList  := TBaseSwItemList.Create();
   FClassFilter        := TCmpSwComponentClassFilter.Create();
   FFilterCheckBoxes   := TObjectList.Create();
+  FOtherGroup         := TCmpSwFilterGroup.Create(nil);
   try
-    Result  := inherited InternalExecute();
+    FOtherGroup.Name    := 'Other';
+    FOtherGroup.Enabled := False;
+    FOtherGroup.Visible := False;
+    
+    Result              := inherited InternalExecute();
   finally
+    FreeAndNil(FOtherGroup);
     FreeAndNil(FFilterCheckBoxes);
     FreeAndNil(FClassFilter);
     FreeAndNil(FClassFilteredList);
@@ -271,7 +289,7 @@ begin
            DT_LEFT or DT_VCENTER or DT_END_ELLIPSIS or DT_CALCRECT);
 
   textRect.Left   := textRect.Right;
-  textRect.Right  := ARect.Right;
+  textRect.Right  := ARect.Right - 2;
 
   { Draw component class text }
   ACanvas.Font.Color  := clGrayText;
@@ -288,62 +306,6 @@ var
   itemIndex:        Integer;
 
 begin
-  if ClassFilter.Groups.Count = 0 then
-  begin
-    with ClassFilter.Groups.Add() do
-    begin
-      Name    := 'Actions';
-      Filter.Add('TAction');
-      Visible := True;
-    end;
-
-    with ClassFilter.Groups.Add() do
-    begin
-      Name    := 'Menu items';
-      Filter.Add('TMenuItem');
-      Visible := True;
-    end;
-
-    with ClassFilter.Groups.Add() do
-    begin
-      Name    := 'Dataset fields';
-
-      Filter.Add('TField');
-      Filter.Add('T*Field');
-      Visible := True;
-    end;
-
-    with ClassFilter.Groups.Add() do
-    begin
-      Name    := 'DevEx Grid columns';
-
-      Filter.Add('TcxGridDBColumn');
-      Filter.Add('TcxGridColumn');
-    end;
-
-//    with ClassFilter.Groups.Add() do
-//    begin
-//      Name    := 'Toolbar2000 items';
-//      Enabled := True;
-//
-//      Filter.Add('TTBXItem');
-//      Filter.Add('TTBItem');
-//      Filter.Add('TTBXSeparatorItem');
-//      Filter.Add('TTBXNoPrefixItem');
-//      Filter.Add('TTBXNoPrefixSubmenuItem');
-//      Filter.Add('TTBXSubmenuItem');
-//    end;
-
-//    with ClassFilter.Groups.Add() do
-//    begin
-//      Name    := 'X2Software items';
-//      Enabled := True;
-//
-//      Filter.Add('TX2GraphicContainerItem');
-//    end;
-  end;
-
-
   pnlFilters.Visible  := (ClassFilter.Groups.Count > 0);
   
 
@@ -357,6 +319,9 @@ begin
       Inc(itemIndex);
     end;
   end;
+
+  CreateFilterMenuItem(pmnItemsFilters, FOtherGroup, itemIndex);
+  Inc(itemIndex);
 
   { Remove excess menu items }
   for groupIndex := Pred(pmnItemsFilters.Count) downto itemIndex do
@@ -374,6 +339,9 @@ begin
     end;
   end;
 
+  CreateFilterMenuItem(pmnMoreFilters.Items, FOtherGroup, itemIndex);
+  Inc(itemIndex);
+
   for groupIndex := Pred(pmnMoreFilters.Items.Count) downto itemIndex do
     pmnMoreFilters.Items.Delete(groupIndex);
 
@@ -381,14 +349,17 @@ begin
   BuildFilterCheckboxes();
   btnMoreFilters.Visible  := (pmnMoreFilters.Items.Count > 0);
 
-  FClassFilteredList.Clone(ItemList);
-  ClassFilter.FilterList(FClassFilteredList);
+  ClassFilteredList.Clone(ItemList);
+  
+  ClassFilter.FilterUnmatched := FOtherGroup.Enabled;
+  ClassFilter.FilterList(ClassFilteredList);
+  SortList();
 end;
 
 
 function TfrmCmpSwDialog.GetBaseItemList(): TBaseSwItemList;
 begin
-  Result  := FClassFilteredList;
+  Result  := ClassFilteredList;
 end;
 
 
@@ -418,7 +389,7 @@ begin
       checkBox.Top      := checkBoxTop;
       checkBox.Left     := 12;
       checkBox.Caption  := StringReplace(group.Name, '&', '&&', [rfReplaceAll]);
-      checkBox.Checked  := group.Enabled;
+      checkBox.Checked  := not group.Enabled;
       checkBox.Tag      := Integer(group);
       checkBox.OnClick  := FilterCheckBoxClick;
       checkBox.Parent   := gbFilters;
@@ -443,7 +414,7 @@ begin
     Result          := AParent[AItemIndex];
 
   Result.Caption  := StringReplace(AGroup.Name, '&', '&&', [rfReplaceAll]);
-  Result.Checked  := AGroup.Enabled;
+  Result.Checked  := not AGroup.Enabled;
   Result.Tag      := Integer(AGroup);
 end;
 
@@ -457,9 +428,9 @@ begin
   checkBox          := (Sender as TCheckBox);
   group             := TCmpSwFilterGroup(checkBox.Tag);
 
-  if checkBox.Checked <> group.Enabled then
+  if checkBox.Checked = group.Enabled then
   begin
-    group.Enabled     := checkBox.Checked;
+    group.Enabled     := not checkBox.Checked;
 
     UpdateClassFilter();
     UpdateSubFilters();
@@ -476,8 +447,8 @@ begin
   menuItem          := (Sender as TMenuItem);
   group             := TCmpSwFilterGroup(menuItem.Tag);
 
-  menuItem.Checked  := not menuItem.Checked;
   group.Enabled     := menuItem.Checked;
+  menuItem.Checked  := not menuItem.Checked;
 
   UpdateClassFilter();
   UpdateSubFilters();
@@ -508,6 +479,8 @@ end;
 
 procedure TfrmCmpSwDialog.SaveSettings();
 begin
+  // #ToDo2 (MvR) 12-12-2007: save 'sort by ...'
+
   Settings.Dialog.Width   := Self.ClientWidth;
   Settings.Dialog.Height  := Self.ClientHeight;
   Settings.Dialog.MRUList.Assign(MRUList);
@@ -516,6 +489,48 @@ begin
   Settings.SaveFilter(ClassFilter.Groups);
 
   inherited SaveSettings();
+end;
+
+
+
+function TfrmCmpSwDialog.AllowEmptyResult(): Boolean;
+begin
+  Result := True;
+end;
+
+
+function TfrmCmpSwDialog.ColorsEnabled(): Boolean;
+begin
+  Result := inherited ColorsEnabled();
+end;
+
+
+procedure TfrmCmpSwDialog.SortExecute(Sender: TObject);
+begin
+  (Sender as TAction).Checked := True;
+  SortList();
+  UpdateSubFilters();
+end;
+
+
+function SortByName(Item1, Item2: Pointer): Integer;
+begin
+  Result  := CompareText(TCmpSwComponent(Item1).Name, TCmpSwComponent(Item2).Name);
+end;
+
+
+function SortByType(Item1, Item2: Pointer): Integer;
+begin
+  Result  := CompareText(TCmpSwComponent(Item1).ComponentClass, TCmpSwComponent(Item2).ComponentClass);
+end;
+
+
+procedure TfrmCmpSwDialog.SortList();
+begin
+  if actSortByType.Checked then
+    ClassFilteredList.Sort(SortByType)
+  else
+    ClassFilteredList.Sort(SortByName);
 end;
 
 end.

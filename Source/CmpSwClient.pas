@@ -73,12 +73,6 @@ begin
 end;
 
 
-function SortByName(Item1, Item2: Pointer): Integer;
-begin
-  Result  := CompareText(TCmpSwComponent(Item1).Name, TCmpSwComponent(Item2).Name)
-end;
-
-
 procedure TComponentSwitcherHook.NewExecute(Sender: TObject);
 var
   editor:           IOTAEditor;
@@ -108,19 +102,6 @@ begin
 
     if itemList.Count > 0 then
     begin
-      itemList.Sort(SortByName);
-
-      (*
-      ps := (borlandideservices as IOTAPackageServices);
-      for pi := 0 to Pred(ps.PackageCount) do
-      begin
-        for ci := 0 to Pred(ps.ComponentCount[pi]) do
-        begin
-          itemList.Add(TTestItem.Create(ps.PackageNames[pi] + ' - ' + ps.ComponentNames[pi, ci]));
-        end;
-      end;
-      *)
-
       selectedItems := TfrmCmpSwDialog.Execute(itemList);
 
       if Assigned(selectedItems) then

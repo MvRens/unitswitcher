@@ -240,6 +240,42 @@ begin
           CloseKey();
         end;
       end;
+    end else
+    begin
+      { Fill default groups }
+      with AGroups.Add() do
+      begin
+        Name    := 'Actions';
+
+        Filter.Add('TAction');
+        IncludeDescendants  := True;
+        Visible             := True;
+      end;
+
+      with AGroups.Add() do
+      begin
+        Name    := 'Menu items';
+
+        Filter.Add('TMenuItem');
+        Visible := True;
+      end;
+
+      with AGroups.Add() do
+      begin
+        Name    := 'Dataset fields';
+
+        Filter.Add('TField');
+        IncludeDescendants  := True;
+        Visible             := True;
+      end;
+
+      with AGroups.Add() do
+      begin
+        Name    := 'DevEx Grid columns';
+
+        Filter.Add('TcxGridDBColumn');
+        Filter.Add('TcxGridColumn');
+      end;
     end;
   finally
     Free();
@@ -300,9 +336,10 @@ var
   filterText:   String;
 
 begin
-  AGroup.Name     := ARegistry.ReadString('Name');
-  AGroup.Enabled  := ARegistry.ReadBool('Enabled');
-  AGroup.Visible  := ARegistry.ReadBool('Visible');
+  AGroup.Name               := ARegistry.ReadString('Name');
+  AGroup.Enabled            := ARegistry.ReadBool('Enabled');
+  AGroup.IncludeDescendants := ARegistry.ReadBool('IncludeDescendants');
+  AGroup.Visible            := ARegistry.ReadBool('Visible');
 
   if ARegistry.ValueExists('Filter') then
   begin
@@ -323,6 +360,7 @@ var
 begin
   ARegistry.WriteString('Name', AGroup.Name);
   ARegistry.WriteBool('Enabled', AGroup.Enabled);
+  ARegistry.WriteBool('IncludeDescendants', AGroup.IncludeDescendants);
   ARegistry.WriteBool('Visible', AGroup.Visible);
 
   if AGroup.Filter.Count > 0 then

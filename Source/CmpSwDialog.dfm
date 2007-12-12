@@ -53,7 +53,6 @@ inherited frmCmpSwDialog: TfrmCmpSwDialog
       Width = 342
       Height = 65
       Align = alClient
-      Caption = ' Filter '
       TabOrder = 0
       DesignSize = (
         342
@@ -75,6 +74,18 @@ inherited frmCmpSwDialog: TfrmCmpSwDialog
       Caption = '&Filter selected class(es)'
       Enabled = False
     end
+    object actSortByName: TAction
+      Caption = 'Sort by &Name'
+      GroupIndex = 1
+      ShortCut = 49230
+      OnExecute = SortExecute
+    end
+    object actSortByType: TAction
+      Caption = 'Sort by &Type'
+      GroupIndex = 1
+      ShortCut = 49236
+      OnExecute = SortExecute
+    end
   end
   inherited pmnItems: TPopupMenu
     object pmnItemsFilters: TMenuItem [0]
@@ -84,6 +95,15 @@ inherited frmCmpSwDialog: TfrmCmpSwDialog
       Action = actFilterSelected
     end
     object pmnItemsSep1: TMenuItem [2]
+      Caption = '-'
+    end
+    object pmnItemsSortByName: TMenuItem [3]
+      Action = actSortByName
+    end
+    object pmnItemsSortByType: TMenuItem [4]
+      Action = actSortByType
+    end
+    object pmnItemsSep2: TMenuItem [5]
       Caption = '-'
     end
   end

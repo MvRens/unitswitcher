@@ -10,16 +10,15 @@ uses
 
 
 type
-  // #ToDo3 (MvR) 11-12-2007: "Include descendants" option
-  
   TCmpSwFilterGroup = class(TCollectionItem)
   private
-    FEnabled:         Boolean;
-    FFilter:          TStrings;
-    FFilterChanged:   Boolean;
-    FFilterMasks:     TObjectList;
-    FName:            String;
-    FVisible:         Boolean;
+    FEnabled:             Boolean;
+    FFilter:              TStrings;
+    FFilterChanged:       Boolean;
+    FFilterMasks:         TObjectList;
+    FIncludeDescendants:  Boolean;
+    FName:                String;
+    FVisible:             Boolean;
   protected
     procedure FilterChange(Sender: TObject);
 
@@ -33,12 +32,15 @@ type
 
     function Matches(const AValue: String): Boolean;
 
-    property Enabled:       Boolean     read FEnabled write FEnabled;
-    property Filter:        TStrings    read FFilter;
-    property Name:          String      read FName    write FName;
-    property Visible:       Boolean     read FVisible write FVisible;
+    property Enabled:               Boolean     read FEnabled             write FEnabled;
+    property Filter:                TStrings    read FFilter;
+    property IncludeDescendants:    Boolean     read FIncludeDescendants  write FIncludeDescendants;
+    property Name:                  String      read FName                write FName;
+    property Visible:               Boolean     read FVisible             write FVisible;
   end;
 
+
+  TCmpSwMatchResult = (mrNoMatch, mrDisabledMatch, mrMatch);
 
   TCmpSwFilterGroups = class(TCollection)
   private
@@ -48,7 +50,7 @@ type
     constructor Create();
 
     function Add(): TCmpSwFilterGroup;
-    function Matches(const AValue: String): Boolean;
+    function Matches(const AValue: String; AMatchDisabled: Boolean): TCmpSwMatchResult;
 
     property Items[Index: Integer]: TCmpSwFilterGroup read GetItem  write SetItem; default;
   end;
@@ -56,14 +58,16 @@ type
 
   TCmpSwComponentClassFilter  = class(TBaseSwItemFilter)
   private
-    FGroups: TCmpSwFilterGroups;
+    FFilterUnmatched:   Boolean;
+    FGroups:            TCmpSwFilterGroups;
   protected
     procedure VisitItem(const AItem: TBaseSwItem); override;
   public
     constructor Create();
     destructor Destroy(); override;
 
-    property Groups:  TCmpSwFilterGroups  read FGroups;
+    property FilterUnmatched:   Boolean             read FFilterUnmatched write FFilterUnmatched;
+    property Groups:            TCmpSwFilterGroups  read FGroups;
   end;
 
 
@@ -72,7 +76,7 @@ uses
   Masks,
   SysUtils,
 
-  CmpSwObjects;
+  CmpSwObjects, Dialogs;
 
 
 const
@@ -105,6 +109,8 @@ end;
 function TCmpSwFilterGroup.Matches(const AValue: String): Boolean;
 var
   filterIndex:    Integer;
+  valueClass:     TClass;
+  filterClass:    TClass;
 
 begin
   Result  := False;
@@ -113,9 +119,23 @@ begin
   for filterIndex := Pred(Filter.Count) downto 0 do
   begin
     if Assigned(Filter.Objects[filterIndex]) then
-      Result  := TMask(Filter.Objects[filterIndex]).Matches(AValue)
-    else
+    begin
+      Result  := TMask(Filter.Objects[filterIndex]).Matches(AValue);
+    end else
+    begin
       Result  := SameText(Filter[filterIndex], AValue);
+
+      if (not Result) and IncludeDescendants then
+      begin
+        filterClass := GetClass(Filter[filterIndex]);
+        if Assigned(filterClass) then
+        begin
+          valueClass  := GetClass(AValue);
+          if Assigned(valueClass) then
+            Result := valueClass.InheritsFrom(filterClass);
+        end;
+      end;
+    end;
 
     if Result then
       Break;
@@ -197,20 +217,26 @@ begin
 end;
 
 
-function TCmpSwFilterGroups.Matches(const AValue: String): Boolean;
+function TCmpSwFilterGroups.Matches(const AValue: String; AMatchDisabled: Boolean): TCmpSwMatchResult;
 var
   itemIndex:    Integer;
 
 begin
-  Result  := False;
+  Result  := mrNoMatch;
 
   for itemIndex := Pred(Count) downto 0 do
   begin
-    if Items[itemIndex].Enabled then
+    if AMatchDisabled or Items[itemIndex].Enabled then
     begin
-      Result  := Items[itemIndex].Matches(AValue);
-      if Result then
+      if Items[itemIndex].Matches(AValue) then
+      begin
+        if Items[itemIndex].Enabled then
+          Result := mrMatch
+        else
+          Result := mrDisabledMatch;
+
         Break;
+      end;
     end;
   end;
 end;
@@ -235,8 +261,13 @@ end;
 
 procedure TCmpSwComponentClassFilter.VisitItem(const AItem: TBaseSwItem);
 begin
-  if Groups.Matches(TCmpSwComponent(AItem).ComponentClass) then
-    FilterItem(AItem);
+  case Groups.Matches(TCmpSwComponent(AItem).ComponentClass, FilterUnmatched) of
+    mrMatch:
+      FilterItem(AItem);
+    mrNoMatch:
+      if FilterUnmatched then
+        FilterItem(AItem);
+  end;
 end;
 
 end.
