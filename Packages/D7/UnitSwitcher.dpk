@@ -52,6 +52,8 @@ contains
   CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog},
   CmpSwFilters in '..\..\Source\CmpSwFilters.pas',
   BaseSwSettings in '..\..\Source\BaseSwSettings.pas',
-  CmpSwSettings in '..\..\Source\CmpSwSettings.pas';
+  CmpSwSettings in '..\..\Source\CmpSwSettings.pas',
+  CmpSwConfiguration in '..\..\Source\CmpSwConfiguration.pas' {frmCmpSwConfiguration},
+  CmpSwFilterConfiguration in '..\..\Source\CmpSwFilterConfiguration.pas' {frmCmpSwFilterConfiguration};
 
 end.

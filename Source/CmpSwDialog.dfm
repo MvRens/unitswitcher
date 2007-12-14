@@ -37,6 +37,15 @@ inherited frmCmpSwDialog: TfrmCmpSwDialog
     inherited btnOK: TButton
       Left = 190
     end
+    object btnConfiguration: TButton
+      Left = 4
+      Top = 5
+      Width = 85
+      Height = 25
+      Caption = '&Configuration'
+      TabOrder = 2
+      OnClick = btnConfigurationClick
+    end
   end
   object pnlFilters: TPanel [3]
     Left = 0

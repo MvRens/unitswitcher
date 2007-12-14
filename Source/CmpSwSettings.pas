@@ -36,11 +36,16 @@ type
 
   TCmpSwSettings        = class(TObject)
   private
+    FAllowEmptyResult:      Boolean;
     FDialog:                TCmpSwDialogSettings;
-    
+    FFilter:                TCmpSwFilterGroups;
+
     FRegistryKey:           String;
   protected
     procedure Load();
+
+    procedure LoadFilter(const AKey: String; AGroups: TCmpSwFilterGroups);
+    procedure SaveFilter(const AKey: String; AGroups: TCmpSwFilterGroups);
 
     procedure LoadFilterGroup(ARegistry: TRegistry; AGroup: TCmpSwFilterGroup);
     procedure SaveFilterGroup(ARegistry: TRegistry; AGroup: TCmpSwFilterGroup);
@@ -51,10 +56,9 @@ type
     procedure ResetDefaults();
     procedure Save();
 
-    procedure LoadFilter(AGroups: TCmpSwFilterGroups);
-    procedure SaveFilter(AGroups: TCmpSwFilterGroups);
-
-    property Dialog:  TCmpSwDialogSettings  read FDialog  write FDialog;
+    property AllowEmptyResult:  Boolean               read FAllowEmptyResult  write FAllowEmptyResult;
+    property Dialog:            TCmpSwDialogSettings  read FDialog            write FDialog;
+    property Filter:            TCmpSwFilterGroups    read FFilter;
   end;
 
   function Settings(): TCmpSwSettings;
@@ -144,6 +148,7 @@ begin
                    '\ComponentSwitcher';
 
   FDialog       := TCmpSwDialogSettings.Create();
+  FFilter       := TCmpSwFilterGroups.Create();
 
   ResetDefaults();
   Load();
@@ -152,6 +157,7 @@ end;
 
 destructor TCmpSwSettings.Destroy();
 begin
+  FreeAndNil(FFilter);
   FreeAndNil(FDialog);
 
   inherited;
@@ -171,6 +177,7 @@ begin
     if OpenKey(FRegistryKey, False) then
     begin
       FDialog.Load(ideRegistry);
+      LoadFilter('\Filter', Filter);
 
       CloseKey();
     end;
@@ -182,8 +189,46 @@ end;
 
 procedure TCmpSwSettings.ResetDefaults();
 begin
+  AllowEmptyResult  := True;
+
   Dialog.Width  := 350;
   Dialog.Height := 530;
+
+  { Fill default groups }
+  Filter.Clear();
+  with Filter.Add() do
+  begin
+    Name    := 'Actions';
+
+    Filter.Add('TAction');
+    IncludeDescendants  := True;
+    Visible             := True;
+  end;
+
+  with Filter.Add() do
+  begin
+    Name    := 'Menu items';
+
+    Filter.Add('TMenuItem');
+    Visible := True;
+  end;
+
+  with Filter.Add() do
+  begin
+    Name    := 'Dataset fields';
+
+    Filter.Add('TField');
+    IncludeDescendants  := True;
+    Visible             := True;
+  end;
+
+  with Filter.Add() do
+  begin
+    Name    := 'DevEx Grid columns';
+
+    Filter.Add('TcxGridDBColumn');
+    Filter.Add('TcxGridColumn');
+  end;
 end;
 
 
@@ -200,6 +245,7 @@ begin
     if OpenKey(FRegistryKey, True) then
     begin
       FDialog.Save(ideRegistry);
+      SaveFilter('\Filter', Filter);
 
       CloseKey();
     end;
@@ -209,7 +255,7 @@ begin
 end;
 
 
-procedure TCmpSwSettings.LoadFilter(AGroups: TCmpSwFilterGroups);
+procedure TCmpSwSettings.LoadFilter(const AKey: String; AGroups: TCmpSwFilterGroups);
 var
   ideRegistry:      TRegistry;
   groupCount:       Integer;
@@ -222,7 +268,7 @@ begin
   try
     RootKey := HKEY_CURRENT_USER;
 
-    if OpenKey(FRegistryKey + '\Filter', False) then
+    if OpenKey(FRegistryKey + AKey, False) then
     begin
       AGroups.Clear();
       groupCount  := 0;
@@ -240,42 +286,6 @@ begin
           CloseKey();
         end;
       end;
-    end else
-    begin
-      { Fill default groups }
-      with AGroups.Add() do
-      begin
-        Name    := 'Actions';
-
-        Filter.Add('TAction');
-        IncludeDescendants  := True;
-        Visible             := True;
-      end;
-
-      with AGroups.Add() do
-      begin
-        Name    := 'Menu items';
-
-        Filter.Add('TMenuItem');
-        Visible := True;
-      end;
-
-      with AGroups.Add() do
-      begin
-        Name    := 'Dataset fields';
-
-        Filter.Add('TField');
-        IncludeDescendants  := True;
-        Visible             := True;
-      end;
-
-      with AGroups.Add() do
-      begin
-        Name    := 'DevEx Grid columns';
-
-        Filter.Add('TcxGridDBColumn');
-        Filter.Add('TcxGridColumn');
-      end;
     end;
   finally
     Free();
@@ -283,7 +293,7 @@ begin
 end;
 
 
-procedure TCmpSwSettings.SaveFilter(AGroups: TCmpSwFilterGroups);
+procedure TCmpSwSettings.SaveFilter(const AKey: String; AGroups: TCmpSwFilterGroups);
 var
   ideRegistry:      TRegistry;
   subKeys:          TStringList;
@@ -296,7 +306,7 @@ begin
   try
     RootKey := HKEY_CURRENT_USER;
 
-    if OpenKey(FRegistryKey + '\Filter', True) then
+    if OpenKey(FRegistryKey + AKey, True) then
     begin
       subKeys := TStringList.Create();
       try

@@ -51,10 +51,12 @@ type
     pmnItemsSortByName: TMenuItem;
     pmnItemsSortByType: TMenuItem;
     pmnItemsSep2: TMenuItem;
-    
+    btnConfiguration: TButton;
+
     procedure btnMoreFiltersClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure SortExecute(Sender: TObject);
+    procedure btnConfigurationClick(Sender: TObject);
   private
     FClassFilteredList:   TBaseSwItemList;
     FClassFilter:         TCmpSwComponentClassFilter;
@@ -93,6 +95,7 @@ uses
   SysUtils,
   ToolsAPI,
 
+  CmpSwConfiguration,
   CmpSwObjects,
   CmpSwSettings;
 
@@ -247,6 +250,8 @@ begin
   FFilterCheckBoxes   := TObjectList.Create();
   FOtherGroup         := TCmpSwFilterGroup.Create(nil);
   try
+    ClassFilter.Groups  := Settings.Filter;
+
     FOtherGroup.Name    := 'Other';
     FOtherGroup.Enabled := False;
     FOtherGroup.Visible := False;
@@ -471,8 +476,6 @@ begin
   Self.ClientHeight := Settings.Dialog.Height;
   MRUList.Assign(Settings.Dialog.MRUList);
 
-  Settings.LoadFilter(ClassFilter.Groups);
-
   inherited LoadSettings();
 end;
 
@@ -486,8 +489,6 @@ begin
   Settings.Dialog.MRUList.Assign(MRUList);
   Settings.Save();
 
-  Settings.SaveFilter(ClassFilter.Groups);
-
   inherited SaveSettings();
 end;
 
@@ -495,7 +496,7 @@ end;
 
 function TfrmCmpSwDialog.AllowEmptyResult(): Boolean;
 begin
-  Result := True;
+  Result := Settings.AllowEmptyResult;
 end;
 
 
@@ -531,6 +532,16 @@ begin
     ClassFilteredList.Sort(SortByType)
   else
     ClassFilteredList.Sort(SortByName);
+end;
+
+
+procedure TfrmCmpSwDialog.btnConfigurationClick(Sender: TObject);
+begin
+  if TfrmCmpSwConfiguration.Execute() then
+  begin
+    UpdateClassFilter();
+    UpdateSubFilters();
+  end;
 end;
 
 end.

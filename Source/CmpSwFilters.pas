@@ -60,14 +60,17 @@ type
   private
     FFilterUnmatched:   Boolean;
     FGroups:            TCmpSwFilterGroups;
+    FOwnsGroups:        Boolean;
+
+    function GetGroups(): TCmpSwFilterGroups;
+    procedure SetGroups(const Value: TCmpSwFilterGroups);
   protected
     procedure VisitItem(const AItem: TBaseSwItem); override;
   public
-    constructor Create();
     destructor Destroy(); override;
 
     property FilterUnmatched:   Boolean             read FFilterUnmatched write FFilterUnmatched;
-    property Groups:            TCmpSwFilterGroups  read FGroups;
+    property Groups:            TCmpSwFilterGroups  read GetGroups        write SetGroups;
   end;
 
 
@@ -243,19 +246,37 @@ end;
 
 
 { TCmpSwComponentClassFilter }
-constructor TCmpSwComponentClassFilter.Create();
+destructor TCmpSwComponentClassFilter.Destroy();
 begin
-  inherited;
+  if FOwnsGroups then
+    FreeAndNil(FGroups);
 
-  FGroups := TCmpSwFilterGroups.Create();
+  inherited;
 end;
 
 
-destructor TCmpSwComponentClassFilter.Destroy();
+function TCmpSwComponentClassFilter.GetGroups(): TCmpSwFilterGroups;
 begin
-  FreeAndNil(FGroups);
+  if not Assigned(FGroups) then
+  begin
+    FGroups     := TCmpSwFilterGroups.Create();
+    FOwnsGroups := True;
+  end;
 
-  inherited;
+  Result  := FGroups;
+end;
+
+
+procedure TCmpSwComponentClassFilter.SetGroups(const Value: TCmpSwFilterGroups);
+begin
+  if Value <> FGroups then
+  begin
+    if FOwnsGroups then
+      FreeAndNil(FGroups);
+
+    FGroups     := Value;
+    FOwnsGroups := False;
+  end;
 end;
 
 
