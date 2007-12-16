@@ -53,6 +53,8 @@ contains
   CmpSwObjects in '..\..\Source\CmpSwObjects.pas',
   CmpSwFilters in '..\..\Source\CmpSwFilters.pas',
   CmpSwSettings in '..\..\Source\CmpSwSettings.pas',
-  BaseSwSettings in '..\..\Source\BaseSwSettings.pas';
+  BaseSwSettings in '..\..\Source\BaseSwSettings.pas',
+  CmpSwConfiguration in '..\..\Source\CmpSwConfiguration.pas' {frmCmpSwConfiguration},
+  CmpSwFilterConfiguration in '..\..\Source\CmpSwFilterConfiguration.pas' {frmCmpSwFilterConfiguration};
 
 end.

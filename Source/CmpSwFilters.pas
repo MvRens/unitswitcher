@@ -95,7 +95,7 @@ begin
   FFilter                       := TStringList.Create();
   TStringList(FFilter).OnChange := FilterChange;
 
-  FEnabled  := True;
+  FEnabled  := False;
   FVisible  := False;
 end;
 
@@ -181,14 +181,20 @@ begin
 
   for filterIndex := Pred(Filter.Count) downto 0 do
   begin
-    if ContainsMask(Filter[filterIndex]) then
+    if Length(Trim(Filter[filterIndex])) = 0 then
     begin
-      mask  := TMask.Create(Filter[filterIndex]);
-      
-      FilterMasks.Add(mask);
-      Filter.Objects[filterIndex] := mask;
+      Filter.Delete(filterIndex);
     end else
-      Filter.Objects[filterIndex] := nil;
+    begin
+      if ContainsMask(Filter[filterIndex]) then
+      begin
+        mask  := TMask.Create(Filter[filterIndex]);
+
+        FilterMasks.Add(mask);
+        Filter.Objects[filterIndex] := mask;
+      end else
+        Filter.Objects[filterIndex] := nil;
+    end;
   end;
 
   FFilterChanged  := False;

@@ -347,9 +347,23 @@ var
 
 begin
   AGroup.Name               := ARegistry.ReadString('Name');
-  AGroup.Enabled            := ARegistry.ReadBool('Enabled');
-  AGroup.IncludeDescendants := ARegistry.ReadBool('IncludeDescendants');
-  AGroup.Visible            := ARegistry.ReadBool('Visible');
+
+  
+  if ARegistry.ValueExists('Enabled') then
+    AGroup.Enabled            := ARegistry.ReadBool('Enabled')
+  else
+    AGroup.Enabled            := False;
+
+  if ARegistry.ValueExists('IncludeDescendants') then
+    AGroup.IncludeDescendants := ARegistry.ReadBool('IncludeDescendants')
+  else
+    AGroup.IncludeDescendants := False;
+
+  if ARegistry.ValueExists('Visible') then
+    AGroup.Visible            := ARegistry.ReadBool('Visible')
+  else
+    AGroup.Visible            := False;
+
 
   if ARegistry.ValueExists('Filter') then
   begin

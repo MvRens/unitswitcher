@@ -16,7 +16,12 @@ uses
   ExtCtrls,
   Forms,
   Graphics,
-  StdCtrls;
+  ImgList,
+  StdCtrls,
+  ToolWin,
+
+  CmpSwFilters;
+
 
 type
   TfrmCmpSwConfiguration = class(TForm)
@@ -24,19 +29,21 @@ type
     actEdit:                                    TAction;
     actRemove:                                  TAction;
     alMain:                                     TActionList;
-    btnAdd:                                     TButton;
     btnCancel:                                  TButton;
     btnDefault:                                 TButton;
-    btnEdit:                                    TButton;
     btnOk:                                      TButton;
-    btnRemove:                                  TButton;
     chkAllowEmptyResults:                       TCheckBox;
     dlgColor:                                   TColorDialog;
+    ilsFilters:                                 TImageList;
     imgAbout:                                   TImage;
     lbFilters:                                  TListBox;
     lblBugReport:                               TLabel;
     lblVersion:                                 TLabel;
     pcConfiguration:                            TPageControl;
+    tbFilterAdd:                                TToolButton;
+    tbFilterEdit:                               TToolButton;
+    tbFilterRemove:                             TToolButton;
+    tbFilters:                                  TToolBar;
     tsAbout:                                    TTabSheet;
     tsGeneral:                                  TTabSheet;
 
@@ -48,6 +55,7 @@ type
     procedure lbFiltersClick(Sender: TObject);
     procedure lbFiltersData(Control: TWinControl; Index: Integer; var Data: String);
     procedure lbFiltersDataObject(Control: TWinControl; Index: Integer; var DataObject: TObject);
+    procedure lbFiltersDblClick(Sender: TObject);
   private
     function InternalExecute(): Boolean;
 
@@ -55,6 +63,9 @@ type
     procedure SaveSettings();
 
     procedure RefreshFilters();
+    function GetSelectedGroup(): TCmpSwFilterGroup;
+
+    property SelectedGroup:   TCmpSwFilterGroup read GetSelectedGroup;
   public
     class function Execute(): Boolean;
   end;
@@ -62,9 +73,11 @@ type
 implementation
 uses
   ShellAPI,
+  SysUtils,
   Windows,
 
-  CmpSwSettings, CmpSwFilters;
+  CmpSwFilterConfiguration,
+  CmpSwSettings;
 
 
 {$R *.dfm}
@@ -88,7 +101,7 @@ function TfrmCmpSwConfiguration.InternalExecute(): Boolean;
 begin
   LoadSettings();
   RefreshFilters();
-  
+
   Result  := (ShowModal() = mrOk);
   if Result then
     SaveSettings();
@@ -114,6 +127,14 @@ begin
 end;
 
 
+function TfrmCmpSwConfiguration.GetSelectedGroup(): TCmpSwFilterGroup;
+begin
+  Result  := nil;
+  if lbFilters.ItemIndex > -1 then
+    Result  := TCmpSwFilterGroup(lbFilters.Items.Objects[lbFilters.ItemIndex]);
+end;
+
+
 procedure TfrmCmpSwConfiguration.btnDefaultClick(Sender: TObject);
 begin
   if MessageBox(Self.Handle, 'Are you sure you want to revert the ' +
@@ -128,20 +149,59 @@ end;
 
 
 procedure TfrmCmpSwConfiguration.actAddExecute(Sender: TObject);
+var
+  newGroup:   TCmpSwFilterGroup;
+
 begin
-  //
+  newGroup  := TCmpSwFilterGroup.Create(nil);
+  try
+    if TfrmCmpSwFilterConfiguration.Execute(newGroup) then
+    begin
+      newGroup.Collection := Settings.Filter;
+      RefreshFilters();
+    end;
+  finally
+    if not Assigned(newGroup.Collection) then
+      FreeAndNil(newGroup);
+  end;
 end;
 
 
 procedure TfrmCmpSwConfiguration.actEditExecute(Sender: TObject);
+var
+  group:    TCmpSwFilterGroup;
+
 begin
-  //
+  group := SelectedGroup;
+  if Assigned(group) then
+  begin
+    if TfrmCmpSwFilterConfiguration.Execute(group) then
+      lbFilters.Invalidate();
+  end;
 end;
 
 
 procedure TfrmCmpSwConfiguration.actRemoveExecute(Sender: TObject);
+var
+  group:    TCmpSwFilterGroup;
+
 begin
-  //
+  group := SelectedGroup;
+  if Assigned(group) then
+  begin
+    if Application.MessageBox(PChar(Format('Do you want to remove the filter "%s"?',
+                                           [group.Name])), 'Remove',
+                                           MB_YESNO or MB_ICONQUESTION) = ID_YES then
+    begin
+      lbFilters.Items.BeginUpdate();
+      try
+        FreeAndNil(group);
+        RefreshFilters();
+      finally
+        lbFilters.Items.EndUpdate();
+      end;
+    end;
+  end;
 end;
 
 
@@ -174,6 +234,12 @@ procedure TfrmCmpSwConfiguration.lbFiltersDataObject(Control: TWinControl; Index
 begin
   if (Index >= 0) and (Index < Settings.Filter.Count) then
     DataObject  := Settings.Filter[Index];
+end;
+
+
+procedure TfrmCmpSwConfiguration.lbFiltersDblClick(Sender: TObject);
+begin
+  actEdit.Execute();
 end;
 
 end.

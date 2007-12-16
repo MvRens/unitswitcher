@@ -19,10 +19,21 @@ uses
 
 type
   TfrmCmpSwFilterConfiguration = class(TForm)
-    gbMain: TGroupBox;
-    pnlButtons: TPanel;
-    btnOk: TButton;
-    btnCancel: TButton;
+    btnCancel:                                  TButton;
+    btnOk:                                      TButton;
+    bvlHelp:                                    TBevel;
+    chkIncludeDescendants:                      TCheckBox;
+    chkVisible:                                 TCheckBox;
+    edtName:                                    TEdit;
+    gbMain:                                     TGroupBox;
+    lblFilter:                                  TLabel;
+    lblHelp:                                    TLabel;
+    lblHelpText:                                TLabel;
+    lblHelpText2:                               TLabel;
+    lblHelpText3:                               TLabel;
+    lblName:                                    TLabel;
+    mmoFilter:                                  TMemo;
+    pnlButtons:                                 TPanel;
   protected
     function InternalExecute(AGroup: TCmpSwFilterGroup): Boolean;
   public
@@ -50,7 +61,20 @@ end;
 
 function TfrmCmpSwFilterConfiguration.InternalExecute(AGroup: TCmpSwFilterGroup): Boolean;
 begin
+  edtName.Text                  := AGroup.Name;
+  chkIncludeDescendants.Checked := AGroup.IncludeDescendants;
+  chkVisible.Checked            := AGroup.Visible;
+  mmoFilter.Lines.Assign(AGroup.Filter);
+
   Result  := (ShowModal() = mrOk);
+
+  if Result then
+  begin
+    AGroup.Name               := edtName.Text;
+    AGroup.IncludeDescendants := chkIncludeDescendants.Checked;
+    AGroup.Visible            := chkVisible.Checked;
+    AGroup.Filter.Assign(mmoFilter.Lines);
+  end;
 end;
 
 end.

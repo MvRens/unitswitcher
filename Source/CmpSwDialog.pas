@@ -27,7 +27,7 @@ type
     FImageMap: TStringHash;
   protected
     procedure VisitItem(const AItem: TBaseSwItem); override;
-
+                                                    
     function GetComponentPackage(const AClassName: String): String;
     function LoadComponentImage(const APackageName, AClassName: String): Integer;
     procedure ResizeBitmap(const ABitmap: Graphics.TBitmap; const AWidth, AHeight: Integer);
@@ -311,9 +311,6 @@ var
   itemIndex:        Integer;
 
 begin
-  pnlFilters.Visible  := (ClassFilter.Groups.Count > 0);
-  
-
   { Update / extend the menu }
   itemIndex := 0;
   for groupIndex := 0 to Pred(ClassFilter.Groups.Count) do
@@ -388,7 +385,7 @@ begin
   begin
     group := ClassFilter.Groups[groupIndex];
 
-    if group.Visible then
+    if group.Visible then                                
     begin
       checkBox          := TCheckBox.Create(Self);
       checkBox.Top      := checkBoxTop;
@@ -397,13 +394,19 @@ begin
       checkBox.Checked  := not group.Enabled;
       checkBox.Tag      := Integer(group);
       checkBox.OnClick  := FilterCheckBoxClick;
+      checkBox.Width    := gbFilters.ClientWidth - 24;
+      checkBox.Anchors  := [akLeft, akTop, akRight];
       checkBox.Parent   := gbFilters;
 
       Inc(checkBoxTop, 20);
     end;
   end;
 
+  btnMoreFilters.BringToFront();
+
   pnlFilters.Height := (2 * pnlFilters.BorderWidth) + checkBoxTop + 11;
+  pnlButtons.Top    := pnlFilters.Top + pnlFilters.Height;
+  sbStatus.Top      := MaxInt;
 end;
 
 
