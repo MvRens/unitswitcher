@@ -30,10 +30,6 @@ object frmCmpSwConfiguration: TfrmCmpSwConfiguration
     object tsGeneral: TTabSheet
       BorderWidth = 8
       Caption = 'Filters'
-      ExplicitLeft = 0
-      ExplicitTop = 0
-      ExplicitWidth = 0
-      ExplicitHeight = 0
       DesignSize = (
         296
         338)
@@ -59,8 +55,6 @@ object frmCmpSwConfiguration: TfrmCmpSwConfiguration
         OnData = lbFiltersData
         OnDataObject = lbFiltersDataObject
         OnDblClick = lbFiltersDblClick
-        ExplicitLeft = 5
-        ExplicitTop = 34
       end
       object tbFilters: TToolBar
         Left = 0
@@ -69,6 +63,8 @@ object frmCmpSwConfiguration: TfrmCmpSwConfiguration
         Height = 29
         ButtonWidth = 73
         Caption = 'tbFilters'
+        EdgeBorders = []
+        Flat = True
         Images = ilsFilters
         List = True
         ShowCaptions = True

@@ -1,46 +1,33 @@
 inherited frmCmpSwDialog: TfrmCmpSwDialog
+  Width = 358
+  Height = 557
   Caption = 'ComponentSwitcher'
-  ClientHeight = 530
-  ClientWidth = 350
-  ExplicitWidth = 358
-  ExplicitHeight = 557
   PixelsPerInch = 96
   TextHeight = 13
   inherited sbStatus: TStatusBar
     Top = 511
     Width = 350
-    ExplicitTop = 511
-    ExplicitWidth = 350
   end
   inherited pnlMain: TPanel
     Width = 350
     Height = 402
-    ExplicitWidth = 350
-    ExplicitHeight = 402
     inherited pnlSearch: TPanel
       Width = 342
       TabOrder = 1
-      ExplicitWidth = 342
       inherited cmbSearch: TComboBox
         Width = 342
-        ExplicitWidth = 342
       end
     end
     inherited lstItems: TListBox
       Width = 342
       Height = 349
       TabOrder = 2
-      ExplicitTop = 47
-      ExplicitWidth = 342
-      ExplicitHeight = 349
     end
     inherited pnlSubFilters: TPanel
       Width = 342
       TabOrder = 0
-      ExplicitWidth = 342
       inherited lblSubFilters: TLabel
         Width = 343
-        ExplicitWidth = 343
       end
     end
   end
@@ -48,17 +35,13 @@ inherited frmCmpSwDialog: TfrmCmpSwDialog
     Top = 475
     Width = 350
     TabOrder = 2
-    ExplicitTop = 477
-    ExplicitWidth = 350
     inherited btnCancel: TButton
       Left = 271
       TabOrder = 2
-      ExplicitLeft = 271
     end
     inherited btnOK: TButton
       Left = 190
       TabOrder = 1
-      ExplicitLeft = 190
     end
     object btnConfiguration: TButton
       Left = 4
