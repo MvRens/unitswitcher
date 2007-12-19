@@ -17,7 +17,7 @@ uses
 
   BaseSwDialog,
   BaseSwObjects,
-  CmpSwFilters, UnSwDialog;
+  CmpSwFilters;
 
 
 type
@@ -180,6 +180,7 @@ var
   packageHandle:    THandle;
   bitmapHandle:     THandle;
   bitmap:           Graphics.TBitmap;
+  transpColor:      TColor;
 
 begin
   Result        := -1;
@@ -197,6 +198,7 @@ begin
       bitmap  := Graphics.TBitmap.Create();
       try
         bitmap.Handle := bitmapHandle;
+        transpColor   := bitmap.TransparentColor;
 
         if (bitmap.Width <> FImageList.Width) or
            (bitmap.Height <> FImageList.Height) then
@@ -204,7 +206,7 @@ begin
           ResizeBitmap(bitmap, FImageList.Width, FImageList.Height);
         end;
 
-        Result        := FImageList.AddMasked(bitmap, bitmap.TransparentColor);
+        Result        := FImageList.AddMasked(bitmap, transpColor);
       finally
         FreeAndNil(bitmap);
       end;
