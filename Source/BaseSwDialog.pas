@@ -117,7 +117,7 @@ type
     procedure LoadSettings(); virtual;
     procedure SaveSettings(); virtual;
 
-    procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect); virtual;
+    procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState); virtual;
   protected
     property ActiveItem:  TBaseSwItem     read FActiveItem  write FActiveItem;
     property ItemList:    TBaseSwItemList read FItemList    write FItemList;
@@ -548,7 +548,7 @@ begin
 end;
 
 
-procedure TfrmBaseSwDialog.DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect);
+procedure TfrmBaseSwDialog.DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState);
 var
   text:         String;
 
@@ -599,7 +599,7 @@ begin
     end;
 
     Inc(textRect.Left, ilsTypes.Width + 4);
-    DrawItemText(Canvas, currentItem, textRect);
+    DrawItemText(Canvas, currentItem, textRect, State);
   end;
 end;
 

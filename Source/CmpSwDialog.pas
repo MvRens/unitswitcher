@@ -75,7 +75,7 @@ type
     procedure LoadSettings(); override;
     procedure SaveSettings(); override;
 
-    procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect); override;
+    procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState); override;
     procedure UpdateClassFilter();
     procedure SortList();
 
@@ -281,7 +281,7 @@ begin
 end;
 
 
-procedure TfrmCmpSwDialog.DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect);
+procedure TfrmCmpSwDialog.DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState);
 var
   text:       String;
   textRect:   TRect;
@@ -299,7 +299,9 @@ begin
   textRect.Right  := ARect.Right - 2;
 
   { Draw component class text }
-  ACanvas.Font.Color  := clGrayText;
+  if not (odSelected in AState) then
+    ACanvas.Font.Color  := clGrayText;
+    
   text  := (AItem as TCmpSwComponent).ComponentClass;
 
   DrawText(ACanvas.Handle, PChar(text), Length(text), textRect, DT_SINGLELINE or

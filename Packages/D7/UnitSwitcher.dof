@@ -137,10 +137,12 @@ Comments=
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
+[HistoryLists\hlSearchPath]
+Count=1
+Item0=P:\Algemeen\Components\Indy10\Core;P:\Algemeen\Components\Indy10\Protocols;P:\Algemeen\Components\Indy10\System
 [HistoryLists\hlUnitOutputDirectory]
 Count=1
-Item0=..\..\Lib\D7
+Item0=P:\algemeen\components\libd7
 [HistoryLists\hlBPLOutput]
-Count=2
-Item0=..\..\Lib\D7
-Item1=..\Lib\D7
+Count=1
+Item0=P:\algemeen\components\libd7
