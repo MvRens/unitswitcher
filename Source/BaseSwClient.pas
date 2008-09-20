@@ -25,7 +25,7 @@ type
   end;
 
 
-  TBaseSwitcherHook = class(TObject)
+  TBaseSwitcherHook = class(TComponent)
   private
     FHookedActions: TList;
   protected
@@ -39,8 +39,10 @@ type
 
     procedure OldActionExecute(AAction: TObject);
     procedure OldActionUpdate(AAction: TObject);
+
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
   public
-    constructor Create();
+    constructor Create(); reintroduce;
     destructor Destroy(); override;
   end;
 
@@ -54,7 +56,7 @@ uses
 { TBaseSwitcherHook }
 constructor TBaseSwitcherHook.Create();
 begin
-  inherited;
+  inherited Create(nil);
 
   FHookedActions  := TList.Create();
 end;
@@ -123,6 +125,7 @@ begin
     AAction.OnUpdate            := AOnUpdate;
 
   FHookedActions.Add(hookedAction);
+  AAction.FreeNotification(Self);
 end;
 
 
@@ -155,20 +158,25 @@ begin
 end;
 
 
+procedure TBaseSwitcherHook.Notification(AComponent: TComponent; Operation: TOperation);
+begin
+  if (Operation = opRemove) and (AComponent is TContainedAction) then
+    UnhookAction(TContainedAction(AComponent));
+end;
+
+
 procedure TBaseSwitcherHook.UnhookActionIndex(AIndex: Integer);
 var
   hookedAction:   PHookedAction;
   action:         TContainedAction;
-//  onExecute:      TNotifyEvent;
 
 begin
   hookedAction  := FHookedActions[AIndex];
   action        := TContainedAction(hookedAction^.Action);
-//  onExecute     := action.OnExecute;
+  action.RemoveFreeNotification(Self);
 
-//  if onExecute = hookedAction^.NewOnExecute then
-    action.OnExecute  := hookedAction^.OldOnExecute;
-    action.OnUpdate   := hookedAction^.OldOnUpdate;
+  action.OnExecute  := hookedAction^.OldOnExecute;
+  action.OnUpdate   := hookedAction^.OldOnUpdate;
 
   Dispose(hookedAction);
   FHookedActions.Delete(AIndex);
