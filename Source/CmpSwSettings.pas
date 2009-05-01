@@ -34,11 +34,24 @@ type
   end;
 
 
-  TCmpSwSettings        = class(TObject)
+  TCmpSwFilterSettings  = class(TBaseSwSettings)
   private
     FAllowEmptyResult:      Boolean;
+    FWildchars:             Boolean;
+  protected
+    procedure Load(const ARegistry: TRegistry); override;
+    procedure Save(const ARegistry: TRegistry); override;
+  public
+    property AllowEmptyResult:  Boolean               read FAllowEmptyResult  write FAllowEmptyResult;
+    property Wildchars:         Boolean               read FWildchars         write FWildchars;
+  end;
+
+
+  TCmpSwSettings        = class(TObject)
+  private
     FDialog:                TCmpSwDialogSettings;
-    FFilter:                TCmpSwFilterGroups;
+    FFilter:                TCmpSwFilterSettings;
+    FFilterGroups:          TCmpSwFilterGroups;
 
     FRegistryKey:           String;
   protected
@@ -56,9 +69,9 @@ type
     procedure ResetDefaults();
     procedure Save();
 
-    property AllowEmptyResult:  Boolean               read FAllowEmptyResult  write FAllowEmptyResult;
     property Dialog:            TCmpSwDialogSettings  read FDialog            write FDialog;
-    property Filter:            TCmpSwFilterGroups    read FFilter;
+    property Filter:            TCmpSwFilterSettings  read FFilter;
+    property FilterGroups:      TCmpSwFilterGroups    read FFilterGroups;
   end;
 
   function Settings(): TCmpSwSettings;
@@ -105,7 +118,7 @@ end;
 procedure TCmpSwDialogSettings.Load(const ARegistry: TRegistry);
 var
   sMRU:       String;
-  
+
 begin
   ReadIntegerDef(ARegistry, FWidth,   'Width');
   ReadIntegerDef(ARegistry, FHeight,  'Height');
@@ -139,6 +152,21 @@ begin
 end;
 
 
+{ TCmpSwFilterSettings }
+procedure TCmpSwFilterSettings.Load(const ARegistry: TRegistry);
+begin
+  ReadBoolDef(ARegistry, FAllowEmptyResult, 'AllowEmptyResult');
+  ReadBoolDef(ARegistry, FWildchars,        'Wildchars');
+end;
+
+
+procedure TCmpSwFilterSettings.Save(const ARegistry: TRegistry);
+begin
+  WriteBool(ARegistry, FAllowEmptyResult, 'AllowEmptyResult');
+  WriteBool(ARegistry, FWildchars,        'Wildchars');
+end;
+
+
 { TCmpSwSettings }
 constructor TCmpSwSettings.Create();
 begin
@@ -148,7 +176,8 @@ begin
                    '\ComponentSwitcher';
 
   FDialog       := TCmpSwDialogSettings.Create();
-  FFilter       := TCmpSwFilterGroups.Create();
+  FFilter       := TCmpSwFilterSettings.Create();
+  FFilterGroups := TCmpSwFilterGroups.Create();
 
   ResetDefaults();
   Load();
@@ -157,6 +186,7 @@ end;
 
 destructor TCmpSwSettings.Destroy();
 begin
+  FreeAndNil(FFilterGroups);
   FreeAndNil(FFilter);
   FreeAndNil(FDialog);
 
@@ -177,7 +207,8 @@ begin
     if OpenKey(FRegistryKey, False) then
     begin
       FDialog.Load(ideRegistry);
-      LoadFilter('\Filter', Filter);
+      FFilter.Load(ideRegistry);
+      LoadFilter('\Filter', FilterGroups);
 
       CloseKey();
     end;
@@ -189,14 +220,15 @@ end;
 
 procedure TCmpSwSettings.ResetDefaults();
 begin
-  AllowEmptyResult  := True;
+  Filter.AllowEmptyResult := True;
+  Filter.Wildchars        := True;
 
   Dialog.Width  := 350;
   Dialog.Height := 530;
 
   { Fill default groups }
-  Filter.Clear();
-  with Filter.Add() do
+  FilterGroups.Clear();
+  with FilterGroups.Add() do
   begin
     Name    := 'Actions';
 
@@ -205,7 +237,7 @@ begin
     Visible             := True;
   end;
 
-  with Filter.Add() do
+  with FilterGroups.Add() do
   begin
     Name    := 'Menu items';
 
@@ -213,7 +245,7 @@ begin
     Visible := True;
   end;
 
-  with Filter.Add() do
+  with FilterGroups.Add() do
   begin
     Name    := 'Dataset fields';
 
@@ -222,7 +254,7 @@ begin
     Visible             := True;
   end;
 
-  with Filter.Add() do
+  with FilterGroups.Add() do
   begin
     Name    := 'DevEx Grid columns';
 
@@ -245,7 +277,8 @@ begin
     if OpenKey(FRegistryKey, True) then
     begin
       FDialog.Save(ideRegistry);
-      SaveFilter('\Filter', Filter);
+      FFilter.Save(ideRegistry);
+      SaveFilter('\Filter', FilterGroups);
 
       CloseKey();
     end;

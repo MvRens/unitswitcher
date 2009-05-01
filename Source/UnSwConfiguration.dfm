@@ -4,7 +4,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   BorderIcons = [biSystemMenu]
   BorderStyle = bsDialog
   Caption = 'UnitSwitcher Configuration'
-  ClientHeight = 272
+  ClientHeight = 286
   ClientWidth = 303
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -16,15 +16,15 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   Position = poScreenCenter
   DesignSize = (
     303
-    272)
+    286)
   PixelsPerInch = 96
   TextHeight = 13
   object pcConfiguration: TPageControl
     Left = 4
     Top = 4
     Width = 295
-    Height = 231
-    ActivePage = tsAbout
+    Height = 245
+    ActivePage = tsGeneral
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
     object tsGeneral: TTabSheet
@@ -204,11 +204,11 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       end
       object btnDefault: TButton
         Left = 8
-        Top = 167
+        Top = 183
         Width = 109
         Height = 25
         Caption = 'Reset to &default'
-        TabOrder = 2
+        TabOrder = 4
         OnClick = btnDefaultClick
       end
       object chkAllowEmptyResults: TCheckBox
@@ -217,6 +217,14 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
         Width = 273
         Height = 17
         Caption = 'Allow &empty results'
+        TabOrder = 2
+      end
+      object chkWildchars: TCheckBox
+        Left = 8
+        Top = 156
+        Width = 273
+        Height = 17
+        Caption = 'Allow &wildchars in search criteria'
         TabOrder = 3
       end
     end
@@ -225,7 +233,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       ImageIndex = 1
       DesignSize = (
         287
-        203)
+        217)
       object imgAbout: TImage
         Left = 8
         Top = 8
@@ -311,7 +319,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       end
       object lblBugReport: TLabel
         Left = 56
-        Top = 177
+        Top = 191
         Width = 75
         Height = 13
         Cursor = crHandPoint
@@ -327,7 +335,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
       end
       object lblShortcutKeys: TLabel
         Left = 56
-        Top = 162
+        Top = 176
         Width = 127
         Height = 13
         Cursor = crHandPoint
@@ -345,7 +353,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   end
   object btnCancel: TButton
     Left = 224
-    Top = 241
+    Top = 255
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]
@@ -356,7 +364,7 @@ object frmUnSwConfiguration: TfrmUnSwConfiguration
   end
   object btnOk: TButton
     Left = 143
-    Top = 241
+    Top = 255
     Width = 75
     Height = 25
     Anchors = [akRight, akBottom]

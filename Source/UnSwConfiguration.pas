@@ -28,6 +28,7 @@ type
     btnUnitColor:                               TButton;
     chkAllowEmptyResults:                       TCheckBox;
     chkCustomColor:                             TCheckBox;
+    chkWildchars:                               TCheckBox;
     dlgColor:                                   TColorDialog;
     imgAbout:                                   TImage;
     lblBugReport:                               TLabel;
@@ -122,6 +123,7 @@ begin
   lblProjectColor.Font.Color    := Settings.Colors.ProjectSource;
   lblUnitColor.Font.Color       := Settings.Colors.Units;
   chkAllowEmptyResults.Checked  := Settings.Filter.AllowEmptyResult;
+  chkWildchars.Checked          := Settings.Filter.Wildchars;
 end;
 
 
@@ -133,6 +135,7 @@ begin
   Settings.Colors.ProjectSource     := lblProjectColor.Font.Color;
   Settings.Colors.Units             := lblUnitColor.Font.Color;
   Settings.Filter.AllowEmptyResult  := chkAllowEmptyResults.Checked;
+  Settings.Filter.Wildchars         := chkWildchars.Checked;
   Settings.Save();
 end;
 

@@ -35,7 +35,7 @@ object frmCmpSwConfiguration: TfrmCmpSwConfiguration
         338)
       object chkAllowEmptyResults: TCheckBox
         Left = 0
-        Top = 320
+        Top = 300
         Width = 273
         Height = 17
         Anchors = [akLeft, akBottom]
@@ -46,7 +46,7 @@ object frmCmpSwConfiguration: TfrmCmpSwConfiguration
         Left = 0
         Top = 29
         Width = 296
-        Height = 280
+        Height = 264
         Style = lbVirtual
         Align = alTop
         ItemHeight = 16
@@ -84,6 +84,15 @@ object frmCmpSwConfiguration: TfrmCmpSwConfiguration
           Top = 0
           Action = actRemove
         end
+      end
+      object chkWildchars: TCheckBox
+        Left = 0
+        Top = 320
+        Width = 273
+        Height = 17
+        Anchors = [akLeft, akBottom]
+        Caption = 'Allow &wildchars in search criteria'
+        TabOrder = 3
       end
     end
     object tsAbout: TTabSheet

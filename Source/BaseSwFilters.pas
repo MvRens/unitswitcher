@@ -9,6 +9,7 @@ unit BaseSwFilters;
 interface
 uses
   Classes,
+  Masks,
 
   BaseSwObjects;
 
@@ -29,10 +30,16 @@ type
   TBaseSwItemSimpleFilter       = class(TBaseSwItemFilter)
   private
     FFilter:      String;
+    FFilterMask:  TMask;
+    FWildchars:   Boolean;
 
+    function GetFilterMask(): TMask;
     procedure SetFilter(const Value: String);
+  protected
+    property FilterMask:  TMask   read GetFilterMask;
   public
-    property Filter:      String  read FFilter  write SetFilter;
+    property Filter:      String  read FFilter    write SetFilter;
+    property Wildchars:   Boolean read FWildchars write FWildchars;
   end;
 
 
@@ -71,18 +78,48 @@ end;
 
 
 { TBaseSwItemSimpleFilter }
-procedure TBaseSwItemSimpleFilter.SetFilter(const Value: String);
+function TBaseSwItemSimpleFilter.GetFilterMask(): TMask;
 begin
-  FFilter := LowerCase(Value);
+  if not Assigned(FFilterMask) then
+    FFilterMask := TMask.Create('*' + FFilter + '*');
+
+  Result := FFilterMask;
+end;
+
+
+procedure TBaseSwItemSimpleFilter.SetFilter(const Value: String);
+var
+  newValue: string;
+
+begin
+  newValue  := LowerCase(Value);
+  if newValue <> FFilter then
+  begin
+    FFilter := newValue;
+    FreeAndNil(FFilterMask);
+  end;
 end;
 
 
 { TBaseSwItemSimpleNameFilter }
 procedure TBaseSwItemSimpleNameFilter.VisitItem(const AItem: TBaseSwItem);
+var
+  matches:  Boolean;
+  itemName: string;
+
 begin
-  if (Length(Filter) > 0) and
-     (AnsiPos(Filter, LowerCase(AItem.Name)) = 0) then
-    FilterItem(AItem);
+  if Length(Filter) > 0 then
+  begin
+    itemName  := LowerCase(AItem.Name);
+
+    if Wildchars then
+      matches := FilterMask.Matches(itemName)
+    else
+      matches := (AnsiPos(Filter, itemName) > 0);
+
+    if not matches then
+      FilterItem(AItem);
+  end;
 end;
 
 end.

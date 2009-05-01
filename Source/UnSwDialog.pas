@@ -93,6 +93,7 @@ type
 
     function AllowEmptyResult(): Boolean; override;
     function ColorsEnabled(): Boolean; override;
+    function Wildchars(): Boolean; override;
 
     function GetBaseItemList(): TBaseSwItemList; override;
     function GetItemDisplayName(const AItem: TBaseSwItem): String; override;
@@ -103,6 +104,7 @@ type
 
     procedure LoadSettings(); override;
     procedure SaveSettings(); override;
+    procedure SettingsChanged(); override;
   public
     class function Execute(const AUnits: TUnSwUnitList;
                            const AFormsOnly: Boolean;
@@ -653,6 +655,14 @@ begin
 end;
 
 
+procedure TfrmUnSwDialog.SettingsChanged();
+begin
+  inherited;
+
+  lstItems.Invalidate();
+end;
+
+
 procedure TfrmUnSwDialog.SortExecute(Sender: TObject);
 begin
   (Sender as TAction).Checked := True;
@@ -708,7 +718,7 @@ end;
 procedure TfrmUnSwDialog.btnConfigurationClick(Sender: TObject);
 begin
   if TfrmUnSwConfiguration.Execute() then
-    lstItems.Invalidate();
+    SettingsChanged();
 end;
 
 
@@ -721,6 +731,12 @@ end;
 function TfrmUnSwDialog.ColorsEnabled(): Boolean;
 begin
   Result  := Settings.Colors.Enabled;
+end;
+
+
+function TfrmUnSwDialog.Wildchars(): Boolean;
+begin
+  Result := Settings.Filter.Wildchars;
 end;
 
 

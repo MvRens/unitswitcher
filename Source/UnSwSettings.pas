@@ -70,11 +70,13 @@ type
   TUnSwFilterSettings = class(TBaseSwSettings)
   private
     FAllowEmptyResults:   Boolean;
+    FWildchars:           Boolean;
   protected
     procedure Load(const ARegistry: TRegistry); override;
     procedure Save(const ARegistry: TRegistry); override;
   public
     property AllowEmptyResult:  Boolean read FAllowEmptyResults write FAllowEmptyResults;
+    property Wildchars:         Boolean read FWildchars         write FWildchars;
   end;
 
   TUnSwResetSetting   = (rsColors, rsFilter, rsForms, rsUnits);
@@ -94,7 +96,7 @@ type
     constructor Create();
     destructor Destroy(); override;
 
-    procedure ResetDefaults(const ASettings: TUnSwResetSettings = [rsColors, rsFilter]);
+    procedure ResetDefaults(const ASettings: TUnSwResetSettings = [rsColors, rsFilter, rsForms, rsUnits]);
     procedure Save();
 
     property Colors:          TUnSwColorSettings  read FColors      write FColors;
@@ -244,12 +246,14 @@ end;
 procedure TUnSwFilterSettings.Load(const ARegistry: TRegistry);
 begin
   ReadBoolDef(ARegistry,  FAllowEmptyResults, 'AllowEmptyResults');
+  ReadBoolDef(ARegistry,  FWildchars,         'Wildchars');
 end;
 
 
 procedure TUnSwFilterSettings.Save(const ARegistry: TRegistry);
 begin
   WriteBool(ARegistry,    FAllowEmptyResults, 'AllowEmptyResults');
+  WriteBool(ARegistry,    FWildchars,         'Wildchars');
 end;
 
 
@@ -313,7 +317,10 @@ begin
   end;
 
   if rsFilter in ASettings then
+  begin
     FFilter.AllowEmptyResult  := False;
+    FFilter.Wildchars         := True;
+  end;
 end;
 
 procedure TUnSwSettings.Load();

@@ -101,6 +101,7 @@ type
     function CreateStyleVisitor(): TBaseSwStyleVisitor; virtual;
 
     function AllowEmptyResult(): Boolean; virtual; abstract;
+    function Wildchars(): Boolean; virtual; abstract;
     function ColorsEnabled(): Boolean; virtual;
     
     function GetBaseItemList(): TBaseSwItemList; virtual;
@@ -116,6 +117,7 @@ type
 
     procedure LoadSettings(); virtual;
     procedure SaveSettings(); virtual;
+    procedure SettingsChanged(); virtual;
 
     procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState); virtual;
   protected
@@ -241,11 +243,19 @@ end;
 procedure TfrmBaseSwDialog.LoadSettings();
 begin
   cmbSearch.Items.Assign(MRUList);
+  SettingsChanged();
 end;
 
 
 procedure TfrmBaseSwDialog.SaveSettings();
 begin
+end;
+
+
+procedure TfrmBaseSwDialog.SettingsChanged();
+begin
+  FInputFilter.Wildchars  := Wildchars;
+  FSubFilter.Wildchars    := Wildchars;
 end;
 
 

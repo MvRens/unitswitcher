@@ -71,9 +71,11 @@ type
 
     function AllowEmptyResult(): Boolean; override;
     function ColorsEnabled(): Boolean; override;
+    function Wildchars(): Boolean; override;
 
     procedure LoadSettings(); override;
     procedure SaveSettings(); override;
+    procedure SettingsChanged(); override;
 
     procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState); override;
     procedure UpdateClassFilter();
@@ -252,7 +254,7 @@ begin
   FFilterCheckBoxes   := TObjectList.Create();
   FOtherGroup         := TCmpSwFilterGroup.Create(nil);
   try
-    ClassFilter.Groups  := Settings.Filter;
+    ClassFilter.Groups  := Settings.FilterGroups;
 
     FOtherGroup.Name    := 'Other';
     FOtherGroup.Enabled := False;
@@ -503,13 +505,19 @@ end;
 
 function TfrmCmpSwDialog.AllowEmptyResult(): Boolean;
 begin
-  Result := Settings.AllowEmptyResult;
+  Result := Settings.Filter.AllowEmptyResult;
 end;
 
 
 function TfrmCmpSwDialog.ColorsEnabled(): Boolean;
 begin
   Result := inherited ColorsEnabled();
+end;
+
+
+function TfrmCmpSwDialog.Wildchars(): Boolean;
+begin
+  Result := Settings.Filter.Wildchars;
 end;
 
 
@@ -546,9 +554,16 @@ procedure TfrmCmpSwDialog.btnConfigurationClick(Sender: TObject);
 begin
   if TfrmCmpSwConfiguration.Execute() then
   begin
+    SettingsChanged();
     UpdateClassFilter();
     UpdateSubFilters();
   end;
+end;
+
+procedure TfrmCmpSwDialog.SettingsChanged;
+begin
+  inherited;
+
 end;
 
 end.

@@ -33,6 +33,7 @@ type
     btnDefault:                                 TButton;
     btnOk:                                      TButton;
     chkAllowEmptyResults:                       TCheckBox;
+    chkWildchars:                               TCheckBox;
     dlgColor:                                   TColorDialog;
     ilsFilters:                                 TImageList;
     imgAbout:                                   TImage;
@@ -116,13 +117,15 @@ end;
 
 procedure TfrmCmpSwConfiguration.LoadSettings();
 begin
-  chkAllowEmptyResults.Checked  := Settings.AllowEmptyResult;
+  chkAllowEmptyResults.Checked  := Settings.Filter.AllowEmptyResult;
+  chkWildchars.Checked          := Settings.Filter.Wildchars;
 end;
 
 
 procedure TfrmCmpSwConfiguration.SaveSettings();
 begin
-  Settings.AllowEmptyResult := chkAllowEmptyResults.Checked;
+  Settings.Filter.AllowEmptyResult  := chkAllowEmptyResults.Checked;
+  Settings.Filter.Wildchars         := chkWildchars.Checked;
   Settings.Save();
 end;
 
@@ -157,7 +160,7 @@ begin
   try
     if TfrmCmpSwFilterConfiguration.Execute(newGroup) then
     begin
-      newGroup.Collection := Settings.Filter;
+      newGroup.Collection := Settings.FilterGroups;
       RefreshFilters();
     end;
   finally
@@ -219,21 +222,21 @@ end;
 
 procedure TfrmCmpSwConfiguration.RefreshFilters();
 begin
-  lbFilters.Count := Settings.Filter.Count;
+  lbFilters.Count := Settings.FilterGroups.Count;
 end;
 
 
 procedure TfrmCmpSwConfiguration.lbFiltersData(Control: TWinControl; Index: Integer; var Data: String);
 begin
-  if (Index >= 0) and (Index < Settings.Filter.Count) then
-    Data  := Settings.Filter[Index].Name;
+  if (Index >= 0) and (Index < Settings.FilterGroups.Count) then
+    Data  := Settings.FilterGroups[Index].Name;
 end;
 
 
 procedure TfrmCmpSwConfiguration.lbFiltersDataObject(Control: TWinControl; Index: Integer; var DataObject: TObject);
 begin
-  if (Index >= 0) and (Index < Settings.Filter.Count) then
-    DataObject  := Settings.Filter[Index];
+  if (Index >= 0) and (Index < Settings.FilterGroups.Count) then
+    DataObject  := Settings.FilterGroups[Index];
 end;
 
 
