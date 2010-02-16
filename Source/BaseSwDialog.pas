@@ -119,6 +119,7 @@ type
     procedure SaveSettings(); virtual;
     procedure SettingsChanged(); virtual;
 
+    procedure SelectItem(AItemIndex: Integer);
     procedure DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState); virtual;
   protected
     property ActiveItem:  TBaseSwItem     read FActiveItem  write FActiveItem;
@@ -313,14 +314,21 @@ begin
         activeUnit  := activeUnits[itemIndex];
         listIndex   := FInputFilteredList.IndexOf(activeUnit);
         if listIndex > -1 then
-          lstItems.Selected[listIndex]  := True;
+          SelectItem(listIndex);
       end;
     finally
       FreeAndNil(activeUnits);
     end;
 
-    if lstItems.SelCount = 0 then
-      lstItems.Selected[0]  := True;
+    if lstItems.MultiSelect then
+    begin
+      if lstItems.SelCount = 0 then
+        SelectItem(0);
+    end else
+    begin
+      if lstItems.ItemIndex = -1 then
+        SelectItem(0);
+    end;
   end;
 
   if Assigned(lstItems.OnClick) then
@@ -382,9 +390,15 @@ end;
 function TfrmBaseSwDialog.GetActiveItems(): TBaseSwItemList;
 var
   itemIndex:      Integer;
+  hasSelection:   Boolean;
 
 begin
   Result  := nil;
+
+  if lstItems.MultiSelect then
+    hasSelection  := (lstItems.SelCount > 0)
+  else
+    hasSelection  := (lstItems.ItemIndex > -1);
 
   if Assigned(ActiveItem) then
   begin
@@ -392,14 +406,22 @@ begin
     Result.OwnsObjects  := False;
     Result.Add(ActiveItem);
     ActiveItem          := nil;
-  end else if lstItems.SelCount > 0 then
+  end else if hasSelection then
   begin
     Result              := CreateItemList();
     Result.OwnsObjects  := False;
-    
-    for itemIndex := 0 to Pred(lstItems.Items.Count) do
-      if lstItems.Selected[itemIndex] then
+
+    if lstItems.MultiSelect then
+    begin
+      for itemIndex := 0 to Pred(lstItems.Items.Count) do
+        if lstItems.Selected[itemIndex] then
+          Result.Add(FInputFilteredList[itemIndex]);
+    end else
+    begin
+      itemIndex := lstItems.ItemIndex;
+      if itemIndex > -1 then
         Result.Add(FInputFilteredList[itemIndex]);
+    end;
   end;
 end;
 
@@ -451,8 +473,11 @@ var
   iItem:      Integer;
 
 begin
-  for iItem := Pred(lstItems.Count) downto 0 do
-    lstItems.Selected[iItem]  := not lstItems.Selected[iItem];
+  if lstItems.MultiSelect then
+  begin
+    for iItem := Pred(lstItems.Count) downto 0 do
+      lstItems.Selected[iItem]  := not lstItems.Selected[iItem];
+  end;
 end;
 
 
@@ -558,6 +583,15 @@ begin
 end;
 
 
+procedure TfrmBaseSwDialog.SelectItem(AItemIndex: Integer);
+begin
+  if lstItems.MultiSelect then
+    lstItems.Selected[AItemIndex] := True
+  else
+    lstItems.ItemIndex := AItemIndex;
+end;
+
+
 procedure TfrmBaseSwDialog.DrawItemText(ACanvas: TCanvas; AItem: TBaseSwItem; ARect: TRect; AState: TOwnerDrawState);
 var
   text:         String;
@@ -627,7 +661,7 @@ begin
     if (itemIndex > -1) and (not lstItems.Selected[itemIndex]) then
     begin
       lstItems.ClearSelection;
-      lstItems.Selected[itemIndex]  := True;
+      SelectItem(itemIndex);
       UpdateItemActions();
     end;
   end;

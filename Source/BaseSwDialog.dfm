@@ -1,10 +1,10 @@
 object frmBaseSwDialog: TfrmBaseSwDialog
   Left = 284
   Top = 120
-  Width = 320
-  Height = 425
   BorderIcons = [biSystemMenu]
   Caption = 'UnitSwitcher'
+  ClientHeight = 389
+  ClientWidth = 304
   Color = clBtnFace
   Constraints.MinHeight = 240
   Constraints.MinWidth = 290
@@ -32,8 +32,8 @@ object frmBaseSwDialog: TfrmBaseSwDialog
   TextHeight = 13
   object sbStatus: TStatusBar
     Left = 0
-    Top = 379
-    Width = 312
+    Top = 370
+    Width = 304
     Height = 19
     Panels = <
       item
@@ -43,8 +43,8 @@ object frmBaseSwDialog: TfrmBaseSwDialog
   object pnlMain: TPanel
     Left = 0
     Top = 0
-    Width = 312
-    Height = 343
+    Width = 304
+    Height = 334
     Align = alClient
     BevelOuter = bvNone
     BorderWidth = 4
@@ -52,13 +52,13 @@ object frmBaseSwDialog: TfrmBaseSwDialog
     object pnlSearch: TPanel
       Left = 4
       Top = 24
-      Width = 304
+      Width = 296
       Height = 25
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 0
       DesignSize = (
-        304
+        296
         25)
       object cmbSearch: TComboBox
         Left = 0
@@ -78,8 +78,8 @@ object frmBaseSwDialog: TfrmBaseSwDialog
     object lstItems: TListBox
       Left = 4
       Top = 49
-      Width = 304
-      Height = 290
+      Width = 296
+      Height = 281
       Style = lbVirtualOwnerDraw
       Align = alClient
       ItemHeight = 20
@@ -95,14 +95,14 @@ object frmBaseSwDialog: TfrmBaseSwDialog
     object pnlSubFilters: TPanel
       Left = 4
       Top = 4
-      Width = 304
+      Width = 296
       Height = 20
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 2
       Visible = False
       DesignSize = (
-        304
+        296
         20)
       object lblSubFilters: TLabel
         Left = 0
@@ -117,14 +117,14 @@ object frmBaseSwDialog: TfrmBaseSwDialog
   end
   object pnlButtons: TPanel
     Left = 0
-    Top = 343
-    Width = 312
+    Top = 334
+    Width = 304
     Height = 36
     Align = alBottom
     BevelOuter = bvNone
     TabOrder = 1
     DesignSize = (
-      312
+      304
       36)
     object btnCancel: TButton
       Left = 233

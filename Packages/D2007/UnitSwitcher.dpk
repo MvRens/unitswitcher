@@ -1,0 +1,64 @@
+package UnitSwitcher;
+
+{$R *.res}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DESCRIPTION 'UnitSwitcher'}
+{$LIBSUFFIX 'D2007'}
+{$DESIGNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  rtl,
+  designide,
+  vcl,
+  xmlrtl,
+  vclactnband,
+  vclx;
+
+contains
+  UnSwClient in '..\..\Source\UnSwClient.pas',
+  UnSwObjects in '..\..\Source\UnSwObjects.pas',
+  UnSwDialog in '..\..\Source\UnSwDialog.pas' {frmUnSwDialog},
+  UnSwFilters in '..\..\Source\UnSwFilters.pas',
+  UnSwConfiguration in '..\..\Source\UnSwConfiguration.pas' {frmUnSwConfiguration},
+  UnSwSettings in '..\..\Source\UnSwSettings.pas',
+  UnSwShortcuts in '..\..\Source\UnSwShortcuts.pas' {frmUnSwShortcuts},
+  CmpSwClient in '..\..\Source\CmpSwClient.pas',
+  BaseSwClient in '..\..\Source\BaseSwClient.pas',
+  BaseSwDialog in '..\..\Source\BaseSwDialog.pas' {frmBaseSwDialog},
+  BaseSwFilters in '..\..\Source\BaseSwFilters.pas',
+  BaseSwObjects in '..\..\Source\BaseSwObjects.pas',
+  UnSwReg in '..\..\Source\UnSwReg.pas',
+  CmpSwDialog in '..\..\Source\CmpSwDialog.pas' {frmCmpSwDialog},
+  CmpSwObjects in '..\..\Source\CmpSwObjects.pas',
+  CmpSwFilters in '..\..\Source\CmpSwFilters.pas',
+  CmpSwSettings in '..\..\Source\CmpSwSettings.pas',
+  BaseSwSettings in '..\..\Source\BaseSwSettings.pas',
+  CmpSwConfiguration in '..\..\Source\CmpSwConfiguration.pas' {frmCmpSwConfiguration},
+  CmpSwFilterConfiguration in '..\..\Source\CmpSwFilterConfiguration.pas' {frmCmpSwFilterConfiguration},
+  ProjSwClient in '..\..\Source\ProjSwClient.pas',
+  ProjSwDialog in '..\..\Source\ProjSwDialog.pas' {frmProjSwDialog},
+  ProjSwObjects in '..\..\Source\ProjSwObjects.pas',
+  ProjSwSettings in '..\..\Source\ProjSwSettings.pas';
+
+end.

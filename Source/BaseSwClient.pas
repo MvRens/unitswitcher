@@ -29,6 +29,8 @@ type
   private
     FHookedActions: TList;
   protected
+    function GetIDEActionList: TCustomActionList;
+
     function GetHookedActionIndex(AAction: TContainedAction): Integer;
     function GetHookedAction(AAction: TContainedAction): PHookedAction;
 
@@ -73,6 +75,20 @@ begin
   FreeAndNil(FHookedActions);
 
   inherited;
+end;
+
+
+function TBaseSwitcherHook.GetIDEActionList: TCustomActionList;
+var
+  ntaServices:  INTAServices;
+
+begin
+  Assert(Assigned(BorlandIDEServices), 'BorlandIDEServices not available.');
+  Assert(Supports(BorlandIDEServices, INTAServices, ntaServices),
+                  'BorlandIDEServices does not support the ' +
+                  'INTAServices interface.');
+
+  Result := ntaServices.ActionList;
 end;
 
 
@@ -132,20 +148,17 @@ end;
 function TBaseSwitcherHook.HookIDEAction(const AName: String;
                                          AOnExecute, AOnUpdate: TNotifyEvent): TContainedAction;
 var
+  actionList:     TCustomActionList;
   actionIndex:    Integer;
-  ntaServices:    INTAServices;
   action:         TContainedAction;
 
 begin
-  Result  := nil;
-  Assert(Assigned(BorlandIDEServices), 'BorlandIDEServices not available.');
-  Assert(Supports(BorlandIDEServices, INTAServices, ntaServices),
-                  'BorlandIDEServices does not support the ' +
-                  'INTAServices interface.');
+  Result      := nil;
+  actionList  := GetIDEActionList;
 
-  for actionIndex := 0 to Pred(ntaServices.ActionList.ActionCount) do
+  for actionIndex := 0 to Pred(actionList.ActionCount) do
   begin
-    action  := ntaServices.ActionList.Actions[actionIndex];
+    action  := actionList.Actions[actionIndex];
     if action.Name = AName then
     begin
       Result  := action;

@@ -90,28 +90,32 @@ begin
   begin
     formComponent := formEditor.GetRootComponent;
     itemList      := TBaseSwItemList.Create();
-
-    for componentIndex := Pred(formComponent.GetComponentCount) downto 0 do
-    begin
-      component := formComponent.GetComponent(componentIndex);
-      item      := TCmpSwComponent.TryCreate(component);
-
-      if Assigned(item) then
-        itemList.Add(item);
-    end;
-
-    if itemList.Count > 0 then
-    begin
-      selectedItems := TfrmCmpSwDialog.Execute(itemList);
-
-      if Assigned(selectedItems) then
+    try
+      for componentIndex := Pred(formComponent.GetComponentCount) downto 0 do
       begin
-        for componentIndex := 0 to Pred(selectedItems.Count) do
-        begin
-          item  := TCmpSwComponent(selectedItems[componentIndex]);
-          item.Activate(componentIndex = 0);
+        component := formComponent.GetComponent(componentIndex);
+        item      := TCmpSwComponent.TryCreate(component);
+
+        if Assigned(item) then
+          itemList.Add(item);
+      end;
+
+      if itemList.Count > 0 then
+      begin
+        selectedItems := TfrmCmpSwDialog.Execute(itemList);
+        if Assigned(selectedItems) then
+        try
+          for componentIndex := 0 to Pred(selectedItems.Count) do
+          begin
+            item  := TCmpSwComponent(selectedItems[componentIndex]);
+            item.Activate(componentIndex = 0);
+          end;
+        finally
+          FreeAndNil(selectedItems);
         end;
       end;
+    finally
+      FreeAndNil(itemList);
     end;
   end;
 end;
