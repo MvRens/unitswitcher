@@ -53,6 +53,7 @@ begin
 
   FSwitchAction.Caption     := 'ProjectSwitcher';
   FSwitchAction.ShortCut    := ShortCut(VK_F12, [ssCtrl, ssAlt, ssShift]);
+  FSwitchAction.SecondaryShortCuts.Add(ShortCutToText(ShortCut(VK_F11, [ssCtrl, ssAlt, ssShift])));
   FSwitchAction.OnExecute   := SwitchExecute;
   FSwitchAction.ActionList  := actionList;
 end;
