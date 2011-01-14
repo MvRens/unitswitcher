@@ -10,14 +10,17 @@ uses
 type
   TProjSwProject = class(TBaseSwItem)
   private
+    FIsActive:        Boolean;
     FProject:         IOTAProject;
     FName:            String;
   protected
     function GetName: String; override;
   public
-    constructor Create(AProject: IOTAProject);
+    constructor Create(AProject: IOTAProject; AIsActive: Boolean);
 
     procedure Activate(const AClearSelection: Boolean);
+
+    property IsActive:  Boolean read FIsActive;
   end;
 
 
@@ -27,12 +30,13 @@ uses
 
 
 { TProjSwProject }
-constructor TProjSwProject.Create(AProject: IOTAProject);
+constructor TProjSwProject.Create(AProject: IOTAProject; AIsActive: Boolean);
 begin
   inherited Create;
 
   FProject  := AProject;
   FName     := ExtractFileName(FProject.ProjectOptions.TargetName);
+  FIsActive := AIsActive;
 end;
 
 

@@ -57,6 +57,9 @@ uses
 procedure TProjSwStyleVisitor.VisitItem(const AItem: TBaseSwItem);
 begin
   ImageIndex := 0;
+
+  if AItem is TProjSwProject then
+    Bold := TProjSwProject(AItem).IsActive;
 end;
 
 

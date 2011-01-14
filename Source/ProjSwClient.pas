@@ -98,9 +98,9 @@ begin
     for projectIndex := Pred(moduleServices.MainProjectGroup.ProjectCount) downto 0 do
     begin
       project     := moduleServices.MainProjectGroup.Projects[projectIndex];
-      projectItem := TProjSwProject.Create(project);
+      projectItem := TProjSwProject.Create(project, project = activeProject);
 
-      if project = activeProject then
+      if projectItem.IsActive then
         activeItem := projectItem;
 
       projectList.Add(projectItem);

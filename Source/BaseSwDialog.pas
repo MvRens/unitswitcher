@@ -29,12 +29,14 @@ uses
 type
   TBaseSwStyleVisitor = class(TInterfacedPersistent, IBaseSwVisitor)
   private
+    FBold:              Boolean;
     FColor:             TColor;
     FImageIndex:        Integer;
     FOverlayIndex:      Integer;
   protected
     procedure VisitItem(const AItem: TBaseSwItem); virtual;
   public
+    property Bold:            Boolean read FBold          write FBold;
     property Color:           TColor  read FColor         write FColor;
     property ImageIndex:      Integer read FImageIndex    write FImageIndex;
     property OverlayIndex:    Integer read FOverlayIndex  write FOverlayIndex;
@@ -146,6 +148,7 @@ const
 { TBaseSwStyleVisitor }
 procedure TBaseSwStyleVisitor.VisitItem(const AItem: TBaseSwItem);
 begin
+  Bold          := False;
   Color         := clDefault;
   ImageIndex    := -1;
   OverlayIndex  := -1;
@@ -630,6 +633,11 @@ begin
         Canvas.Font.Color := clWindowText;
     end;
     Canvas.FillRect(Rect);
+
+    if FStyleVisitor.Bold then
+      Canvas.Font.Style := [fsBold]
+    else
+      Canvas.Font.Style := [];
 
     textRect  := Rect;
     InflateRect(textRect, -2, -2);
