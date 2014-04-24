@@ -79,7 +79,7 @@ uses
   Masks,
   SysUtils,
 
-  CmpSwObjects, Dialogs;
+  CmpSwObjects;
 
 
 const
@@ -160,7 +160,11 @@ begin
   Result := False;
 
   for charIndex := Length(AFilter) downto 1 do
+    {$IF CompilerVersion < 23}
     if AFilter[charIndex] in MaskChars then
+    {$ELSE}
+    if CharInSet(AFilter[charIndex], MaskChars) then
+    {$IFEND}
     begin
       Result := True;
       Break;
