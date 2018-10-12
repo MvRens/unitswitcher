@@ -11,6 +11,9 @@ unit BaseSwClient;
 
 interface
 uses
+  {$IF CompilerVersion >= 32}
+  System.Actions,
+  {$IFEND}
   ActnList,
   Classes;
 
