@@ -1,3 +1,5 @@
 *.stat
+*.local
+*.identcache
 __history
 Lib/**/*.dcu
